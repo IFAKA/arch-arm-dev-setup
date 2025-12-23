@@ -57,6 +57,85 @@ show_banner() {
 EOF
 }
 
+# Auto-expand disk if running in VM (before disk space check)
+auto_expand_disk() {
+    log_info "Checking for expandable disk space..."
+    
+    # Detect virtualization
+    local virt_type="none"
+    if command -v systemd-detect-virt &>/dev/null && systemd-detect-virt -v &>/dev/null; then
+        virt_type=$(systemd-detect-virt)
+    elif grep -qi qemu /proc/cpuinfo 2>/dev/null; then
+        virt_type="qemu"
+    fi
+    
+    if [ "$virt_type" = "none" ]; then
+        log_info "Not running in VM, skipping disk expansion"
+        return 0
+    fi
+    
+    log_info "Detected VM environment: $virt_type"
+    
+    # Install required tools quietly
+    pacman -S --noconfirm --needed cloud-guest-utils parted e2fsprogs &>/dev/null || true
+    
+    # Find root device
+    local root_mount=$(findmnt -n -o SOURCE /)
+    local root_device=""
+    
+    if [[ $root_mount =~ ^/dev/([sv]d[a-z]|nvme[0-9]+n[0-9]+)p?[0-9]+$ ]]; then
+        root_device=$(echo "$root_mount" | sed -E 's/p?[0-9]+$//')
+    else
+        log_warning "Could not determine root device, skipping expansion"
+        return 0
+    fi
+    
+    local part_num=$(echo "$root_mount" | grep -o '[0-9]*$')
+    
+    # Check unallocated space
+    local disk_size=$(blockdev --getsize64 "$root_device" 2>/dev/null || echo "0")
+    local part_end=$(parted -s "$root_device" unit B print 2>/dev/null | grep "^ $part_num" | awk '{print $3}' | sed 's/B//')
+    
+    if [ "$disk_size" = "0" ] || [ -z "$part_end" ]; then
+        log_warning "Could not determine disk sizes, skipping expansion"
+        return 0
+    fi
+    
+    local unallocated=$((disk_size - part_end))
+    local unallocated_gb=$((unallocated / 1024 / 1024 / 1024))
+    
+    # If more than 500MB unallocated, expand
+    if [ $unallocated -gt 524288000 ]; then
+        log_info "Found ${unallocated_gb}GB unallocated space - expanding disk..."
+        
+        # Expand partition
+        if command -v growpart &>/dev/null; then
+            growpart "$root_device" "$part_num" &>/dev/null || \
+                parted -s "$root_device" resizepart "$part_num" 100% &>/dev/null
+        else
+            parted -s "$root_device" resizepart "$part_num" 100% &>/dev/null
+        fi
+        
+        # Expand filesystem
+        local fs_type=$(findmnt -n -o FSTYPE "$root_mount")
+        case "$fs_type" in
+            ext4|ext3|ext2)
+                resize2fs "$root_mount" &>/dev/null
+                ;;
+            xfs)
+                xfs_growfs "$root_mount" &>/dev/null
+                ;;
+            btrfs)
+                btrfs filesystem resize max "$root_mount" &>/dev/null
+                ;;
+        esac
+        
+        log_success "Disk expanded successfully! (+${unallocated_gb}GB)"
+    else
+        log_info "No unallocated space found"
+    fi
+}
+
 # Pre-flight checks
 preflight_checks() {
     log_info "Running pre-flight checks..."
@@ -76,6 +155,9 @@ preflight_checks() {
         exit 1
     fi
     log_success "Internet connection OK"
+    
+    # Auto-expand disk if needed (BEFORE disk space check)
+    auto_expand_disk
     
     # Check available disk space (need at least 8GB free)
     AVAILABLE_GB=$(df / | awk 'NR==2 {print int($4/1024/1024)}')
