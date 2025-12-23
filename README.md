@@ -26,11 +26,9 @@ cd ~/Downloads/ArchLinux.utm/Data
 # Automatically find and resize the largest disk (your main disk)
 qemu-img resize "$(ls -S *.qcow2 | head -1)" 32G
 
-# 3. Start VM, login as root/root, then run:
-pacman -Sy git
-git clone https://github.com/IFAKA/arch-arm-dev-setup.git
-cd arch-arm-dev-setup
-bash installer/main.sh
+# 3. Start VM, login as root/root, then run ONE command:
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
+# ✨ The installer will automatically expand your disk to use all 32GB!
 ```
 
 ### 🐧 For Existing Arch Linux ARM Systems
@@ -249,11 +247,11 @@ Password: root
 # Test internet connection
 ping -c 3 archlinux.org
 
-# Run installer
+# Run installer - it will automatically expand your disk!
 curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 ```
 
-The installer will **automatically detect and expand** your disk if you resized it!
+**✨ The installer automatically detects and expands your disk** - no manual partition/filesystem commands needed!
 
 ### 3️⃣ **Configure Shared Folder** (Optional)
 
