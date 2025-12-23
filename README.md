@@ -21,8 +21,9 @@ Perfect for UTM virtual machines on Apple Silicon Macs or physical ARM devices l
 #    https://mac.getutm.app/gallery/archlinux-arm
 
 # 2. Resize disk BEFORE first boot (32GB recommended):
-cd ~/Library/Containers/com.utmapp.UTM/Data/Documents/ArchLinux.utm/Data
-/Applications/UTM.app/Contents/MacOS/qemu-img resize disk-0.qcow2 +23G
+brew install qemu
+cd ~/Downloads/ArchLinux.utm/Data
+qemu-img resize *.qcow2 32G
 
 # 3. Start VM, login as root/root, then run:
 pacman -Sy git
