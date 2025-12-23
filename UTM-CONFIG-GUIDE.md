@@ -64,16 +64,12 @@ brew install qemu
 # For UTM Gallery downloads (most common):
 cd ~/Downloads/ArchLinux.utm/Data
 
-# List files and find the largest .qcow2 (that's your main disk)
-ls -lh *.qcow2
-
-# Resize the largest file (replace FILENAME with yours)
-qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
+# Automatically resize the largest file (your main disk)
+qemu-img resize "$(ls -S *.qcow2 | head -1)" 32G
 
 # OR if you imported it to UTM's library:
 # cd ~/Library/Containers/com.utmapp.UTM/Data/Documents/ArchLinux.utm/Data
-# ls -lh *.qcow2
-# qemu-img resize YOUR_LARGEST_FILE.qcow2 32G
+# qemu-img resize "$(ls -S *.qcow2 | head -1)" 32G
 ```
 
 The installer automatically:

@@ -91,36 +91,41 @@ We'll resize it to **32GB** (or your preferred size) BEFORE first boot.
    # -rw-r--r--  320K  5A4F98B5-7C76-4737-9CEE-4E8B7260A46C.qcow2  <- EFI boot (small)
    # -rw-r--r--  555M  BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2  <- MAIN DISK (large)
    
-   # Copy the filename of the LARGEST file for the next step
+   # Save the largest filename to a variable for easy use
+   MAIN_DISK=$(ls -S *.qcow2 | head -1)
+   echo "Main disk: $MAIN_DISK"
    ```
 
 5. **Check current disk size:**
    ```bash
-   # Replace with your actual filename
-   qemu-img info BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2
+   qemu-img info "$MAIN_DISK"
    ```
    
    You should see: `virtual size: 9.77 GiB`
 
 6. **Resize the disk to 32GB:**
    ```bash
-   # Replace BB208CBD... with YOUR actual largest filename from step 4
-   qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
+   qemu-img resize "$MAIN_DISK" 32G
    
    # The command will output: "Image resized."
    ```
 
 7. **Verify the new size:**
    ```bash
-   qemu-img info BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 | grep "virtual size"
+   qemu-img info "$MAIN_DISK" | grep "virtual size"
    ```
    
    You should now see: `virtual size: 32 GiB`
 
 **Want a different size?** Just change the final size:
-- For 16GB: `qemu-img resize FILENAME.qcow2 16G`
-- For 40GB: `qemu-img resize FILENAME.qcow2 40G`
-- For 64GB: `qemu-img resize FILENAME.qcow2 64G`
+- For 16GB: `qemu-img resize "$MAIN_DISK" 16G`
+- For 40GB: `qemu-img resize "$MAIN_DISK" 40G`
+- For 64GB: `qemu-img resize "$MAIN_DISK" 64G`
+
+**One-liner (if you don't want to use the variable):**
+```bash
+qemu-img resize "$(ls -S *.qcow2 | head -1)" 32G
+```
 
 #### Option B: Using UTM GUI (If Available)
 
@@ -426,18 +431,18 @@ brew install qemu
 # Check the disk size (adjust path if needed)
 cd ~/Downloads/ArchLinux.utm/Data
 
-# List files to find the largest one
-ls -lh *.qcow2
-
-# Check the virtual size of the largest file
-qemu-img info BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 | grep "virtual size"
+# Find the largest disk and check its size
+MAIN_DISK=$(ls -S *.qcow2 | head -1)
+qemu-img info "$MAIN_DISK" | grep "virtual size"
 ```
 
 If it shows 9GB or 9.77GB, you need to resize it:
 ```bash
 # Shut down the VM first!
-# Replace with YOUR actual largest filename
-qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
+qemu-img resize "$MAIN_DISK" 32G
+
+# Or one-liner without variable:
+# qemu-img resize "$(ls -S *.qcow2 | head -1)" 32G
 ```
 
 Then **in the VM**, manually expand:
