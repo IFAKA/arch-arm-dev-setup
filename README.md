@@ -12,17 +12,41 @@ Perfect for UTM virtual machines on Apple Silicon Macs or physical ARM devices l
 
 ## ⚡ TL;DR - Get Started in 30 Seconds
 
+### 🍎 For Mac Users (UTM - Recommended!)
+
+**📖 Complete step-by-step guide:** [**INSTALL-FROM-UTM-GALLERY.md**](INSTALL-FROM-UTM-GALLERY.md) ⭐
+
 ```bash
-# ONE COMMAND = Complete dev environment in 60 minutes
+# 1. Download Arch Linux ARM from UTM Gallery
+#    https://mac.getutm.app/gallery/archlinux-arm
+
+# 2. Resize disk BEFORE first boot (32GB recommended):
+cd ~/Library/Containers/com.utmapp.UTM/Data/Documents/ArchLinux.utm/Data
+/Applications/UTM.app/Contents/MacOS/qemu-img resize disk-0.qcow2 +23G
+
+# 3. Start VM, login as root/root, then run:
+pacman -Sy git
+git clone https://github.com/IFAKA/arch-arm-dev-setup.git
+cd arch-arm-dev-setup
+bash installer/main.sh
+```
+
+### 🐧 For Existing Arch Linux ARM Systems
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 ```
 
+---
+
 **🎁 What You Get:**
+
 - ✅ **Zsh** + **Starship** prompt (beautiful, git-aware, fast)
 - ✅ **VimZap Neovim** (12ms startup, full IDE experience)
 - ✅ **Node.js** + **Go** + **Rust** + **Python** + **C/C++**
 - ✅ **Docker** + **PostgreSQL** + **Redis** + **MongoDB**
 - ✅ **Auto-starts GUI** on login - zero manual setup needed!
+- ✅ **Automatic disk expansion** in VMs (UTM/QEMU)
 
 **💾 Memory:** ~300MB idle, ~1.2GB fullstack dev (works great on 4GB RAM)
 
@@ -54,23 +78,23 @@ curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/insta
 
 ### 🖥️ **Modern Shell Experience**
 
-| Feature | What You Get |
-|---------|-------------|
-| **Shell** | Zsh with Starship prompt |
-| **Visual** | Git-aware, beautiful, blazing fast |
+| Feature            | What You Get                           |
+| ------------------ | -------------------------------------- |
+| **Shell**          | Zsh with Starship prompt               |
+| **Visual**         | Git-aware, beautiful, blazing fast     |
 | **Smart Features** | Auto-suggestions + syntax highlighting |
-| **Completion** | Case-insensitive, context-aware |
-| **Config** | Shared between Zsh and Bash |
+| **Completion**     | Case-insensitive, context-aware        |
+| **Config**         | Shared between Zsh and Bash            |
 
 ### ⚡ **VimZap Neovim Config**
 
-| Feature | Benefit |
-|---------|---------|
-| **Startup** | 12ms - instant launch |
-| **Experience** | LazyVim DX - just works |
-| **Discovery** | Press `Space` for command menu |
-| **LSP** | Node.js, TypeScript, Go, Rust, Python, C++ |
-| **Tools** | File explorer, fuzzy finder, Git integration |
+| Feature        | Benefit                                      |
+| -------------- | -------------------------------------------- |
+| **Startup**    | 12ms - instant launch                        |
+| **Experience** | LazyVim DX - just works                      |
+| **Discovery**  | Press `Space` for command menu               |
+| **LSP**        | Node.js, TypeScript, Go, Rust, Python, C++   |
+| **Tools**      | File explorer, fuzzy finder, Git integration |
 
 ### 🔧 **Complete Development Stack**
 
@@ -97,11 +121,11 @@ CLI Tools:    ripgrep · fd · fzf · jq · btop
 
 ### 💾 **Memory Efficiency**
 
-| Scenario | RAM Usage | Effective Memory |
-|----------|-----------|------------------|
-| **Idle** | ~300MB | zram gives you ~6GB |
-| **Coding** | ~620MB | from 4GB physical RAM |
-| **Fullstack** | ~1.2GB | Compressed efficiently |
+| Scenario      | RAM Usage | Effective Memory       |
+| ------------- | --------- | ---------------------- |
+| **Idle**      | ~300MB    | zram gives you ~6GB    |
+| **Coding**    | ~620MB    | from 4GB physical RAM  |
+| **Fullstack** | ~1.2GB    | Compressed efficiently |
 
 ### 🪟 **Sway Window Manager**
 
@@ -121,7 +145,7 @@ CLI Tools:    ripgrep · fd · fzf · jq · btop
 
 ## 🎯 Quick Start
 
-### **📦 One-Line Installation** 
+### **📦 One-Line Installation**
 
 ```bash
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -178,13 +202,13 @@ curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/insta
 
 **Zero Manual Steps After Install:**
 
-| Feature | Status |
-|---------|--------|
-| Sway auto-starts when you login | ✅ |
-| Terminal auto-opens in Sway | ✅ |
-| Welcome message shows (once) | ✅ |
-| All commands discoverable | ✅ |
-| Type `help` anytime | ✅ |
+| Feature                         | Status |
+| ------------------------------- | ------ |
+| Sway auto-starts when you login | ✅     |
+| Terminal auto-opens in Sway     | ✅     |
+| Welcome message shows (once)    | ✅     |
+| All commands discoverable       | ✅     |
+| Type `help` anytime             | ✅     |
 
 **🧠 ADHD-Friendly:** No memorization needed - everything is discoverable!
 
@@ -192,10 +216,24 @@ curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/insta
 
 ## 📋 For UTM on macOS
 
-### 1️⃣ **Create Arch Linux ARM VM in UTM**
+> **⭐ NEW! Complete Installation Guide for Mac Users**
+> 
+> **[📖 INSTALL-FROM-UTM-GALLERY.md](INSTALL-FROM-UTM-GALLERY.md)** - Step-by-step guide from UTM Gallery to working dev environment!
+> 
+> Includes: Disk resizing, automatic expansion, troubleshooting, and more!
 
+### Quick Start for UTM
+
+### 1️⃣ **Get Arch Linux ARM**
+
+**Easiest method:**
+- Go to https://mac.getutm.app/gallery/archlinux-arm
+- Click "Open in UTM"
+- **IMPORTANT:** Resize disk to 32GB+ before first boot ([see guide](INSTALL-FROM-UTM-GALLERY.md#step-2-resize-the-disk-important))
+
+**Or create manually:**
 - 📥 **Download** [Arch Linux ARM](https://archlinuxarm.org/platforms/armv8/generic)
-- ⚙️ **Configure**: 4GB RAM, 2-4 CPU cores
+- ⚙️ **Configure**: 4GB RAM, 2-4 CPU cores, **16GB+ disk**
 - 📖 **Details**: See [UTM Configuration Guide](UTM-CONFIG-GUIDE.md)
 
 ### 2️⃣ **First Boot**
@@ -213,6 +251,8 @@ ping -c 3 archlinux.org
 curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 ```
 
+The installer will **automatically detect and expand** your disk if you resized it!
+
 ### 3️⃣ **Configure Shared Folder** (Optional)
 
 **Before or after installation:**
@@ -227,6 +267,7 @@ curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/insta
 ## 📋 For Physical ARM Devices
 
 **✅ Works on:**
+
 - Raspberry Pi 4/5 (4GB+ model)
 - Other ARM64/aarch64 devices
 
@@ -291,13 +332,13 @@ vim myfile.js    # Same (alias)
 
 **In Neovim**: Press `Space` for command menu
 
-| Key | Action |
-|-----|--------|
-| `Space + e` | File explorer |
-| `Space + ff` | Find files |
-| `Space + fg` | Grep in files |
+| Key          | Action                |
+| ------------ | --------------------- |
+| `Space + e`  | File explorer         |
+| `Space + ff` | Find files            |
+| `Space + fg` | Grep in files         |
 | `Space + gg` | LazyGit (full Git UI) |
-| `Space + ?` | Show all keymaps |
+| `Space + ?`  | Show all keymaps      |
 
 #### **🛠️ Development Workflows**
 
@@ -348,38 +389,38 @@ yta <url>        # Download audio only
 
 #### **File Management**
 
-| Key | Action |
-|-----|--------|
-| `Space` | **Command menu** (shows all) |
-| `Space + e` | File explorer (toggle) |
-| `Space + ff` | Find files (fuzzy) |
-| `Space + fg` | Grep in files |
-| `Space + fb` | Find buffers |
-| `Space + fr` | Recent files |
+| Key          | Action                       |
+| ------------ | ---------------------------- |
+| `Space`      | **Command menu** (shows all) |
+| `Space + e`  | File explorer (toggle)       |
+| `Space + ff` | Find files (fuzzy)           |
+| `Space + fg` | Grep in files                |
+| `Space + fb` | Find buffers                 |
+| `Space + fr` | Recent files                 |
 
 #### **Code Actions (LSP)**
 
-| Key | Action |
-|-----|--------|
-| `Space + ca` | Code action |
-| `Space + cr` | Rename symbol |
-| `Space + cf` | Format code |
-| `gd` | Go to definition |
-| `gr` | Go to references |
-| `K` | Hover docs |
+| Key          | Action           |
+| ------------ | ---------------- |
+| `Space + ca` | Code action      |
+| `Space + cr` | Rename symbol    |
+| `Space + cf` | Format code      |
+| `gd`         | Go to definition |
+| `gr`         | Go to references |
+| `K`          | Hover docs       |
 
 #### **Git Integration**
 
-| Key | Action |
-|-----|--------|
+| Key          | Action            |
+| ------------ | ----------------- |
 | `Space + gg` | LazyGit (full UI) |
-| `Space + gf` | Git files |
-| `Space + gs` | Git status |
+| `Space + gf` | Git files         |
+| `Space + gs` | Git status        |
 
 #### **Help**
 
-| Key | Action |
-|-----|--------|
+| Key         | Action           |
+| ----------- | ---------------- |
 | `Space + ?` | Show all keymaps |
 
 </details>
@@ -397,42 +438,43 @@ yta <url>        # Download audio only
 
 #### **Applications**
 
-| Key | Action |
-|-----|--------|
-| `Super+Enter` | Open new terminal |
-| `Super+w` | Open Firefox browser |
-| `Super+n` | Open Neovim in terminal |
-| `Super+d` | Application launcher (wofi) |
+| Key           | Action                      |
+| ------------- | --------------------------- |
+| `Super+Enter` | Open new terminal           |
+| `Super+w`     | Open Firefox browser        |
+| `Super+n`     | Open Neovim in terminal     |
+| `Super+d`     | Application launcher (wofi) |
 
 #### **Window Navigation**
 
-| Key | Action |
-|-----|--------|
-| `Super+Tab` | Switch between windows (like Alt+Tab) |
-| `Super+Shift+Tab` | Switch windows backwards |
-| `Super+Arrows` | Move focus between windows |
-| `Super+1/2/3/4` | Switch to workspace 1/2/3/4 |
-| `Super+Shift+1/2/3/4` | Move window to workspace |
+| Key                   | Action                                |
+| --------------------- | ------------------------------------- |
+| `Super+Tab`           | Switch between windows (like Alt+Tab) |
+| `Super+Shift+Tab`     | Switch windows backwards              |
+| `Super+Arrows`        | Move focus between windows            |
+| `Super+1/2/3/4`       | Switch to workspace 1/2/3/4           |
+| `Super+Shift+1/2/3/4` | Move window to workspace              |
 
 #### **Window Management**
 
-| Key | Action |
-|-----|--------|
-| `Super+f` | Toggle fullscreen |
-| `Super+r` | Enter resize mode (arrows to resize, Esc to exit) |
-| `Super+Space` | Toggle floating mode |
-| `Super+Shift+Q` | Close current window |
+| Key             | Action                                            |
+| --------------- | ------------------------------------------------- |
+| `Super+f`       | Toggle fullscreen                                 |
+| `Super+r`       | Enter resize mode (arrows to resize, Esc to exit) |
+| `Super+Space`   | Toggle floating mode                              |
+| `Super+Shift+Q` | Close current window                              |
 
 #### **System**
 
-| Key | Action |
-|-----|--------|
-| `Super+Shift+C` | Reload Sway configuration |
+| Key             | Action                        |
+| --------------- | ----------------------------- |
+| `Super+Shift+C` | Reload Sway configuration     |
 | `Super+Shift+E` | Exit Sway (drops to terminal) |
 
-*Super key = Windows key / Command key*
+_Super key = Windows key / Command key_
 
 **💡 Pro Tips:**
+
 - **If you close Sway** (`Super+Shift+E`): Just type `sway` to restart it
 - **Windows persist**: Your open windows will be restored
 - **Auto-restart on reboot**: Sway starts automatically when you login
@@ -449,18 +491,19 @@ yta <url>        # Download audio only
 
 ### **System Components**
 
-| Component | Details |
-|-----------|---------|
-| **Shell** | Zsh + Starship prompt |
+| Component          | Details                      |
+| ------------------ | ---------------------------- |
+| **Shell**          | Zsh + Starship prompt        |
 | **Window Manager** | Sway (Wayland) - auto-starts |
-| **Terminal** | Foot - auto-opens |
-| **Launcher** | Wofi |
-| **Status Bar** | Waybar |
-| **Memory** | zram with zstd compression |
+| **Terminal**       | Foot - auto-opens            |
+| **Launcher**       | Wofi                         |
+| **Status Bar**     | Waybar                       |
+| **Memory**         | zram with zstd compression   |
 
 ### **Development Tools**
 
 **Editor**: Neovim with VimZap config
+
 - ⚡ 12ms startup time
 - 📁 File explorer (neo-tree)
 - 🔍 Fuzzy finder (telescope)
@@ -474,18 +517,19 @@ yta <url>        # Download audio only
 **CLI Tools**: ripgrep · fd · fzf · jq · htop · btop
 
 **Zsh Plugins**:
+
 - zsh-autosuggestions
 - zsh-syntax-highlighting
 
 ### **Language Runtimes**
 
-| Language | Version Manager | Path |
-|----------|----------------|------|
-| **Node.js** | nvm (latest LTS) + pnpm | `~/.nvm` |
-| **Go** | Latest from official repos | System |
-| **Rust** | rustup (latest stable) | `~/.cargo` |
-| **Python** | Python 3 + pip + virtualenv | System |
-| **C/C++** | gcc, clang, cmake, ninja | System |
+| Language    | Version Manager             | Path       |
+| ----------- | --------------------------- | ---------- |
+| **Node.js** | nvm (latest LTS) + pnpm     | `~/.nvm`   |
+| **Go**      | Latest from official repos  | System     |
+| **Rust**    | rustup (latest stable)      | `~/.cargo` |
+| **Python**  | Python 3 + pip + virtualenv | System     |
+| **C/C++**   | gcc, clang, cmake, ninja    | System     |
 
 ### **Containerization**
 
@@ -523,21 +567,21 @@ dev         # Tmux session management
 
 ### **💾 Memory Usage by Scenario**
 
-| Scenario | RAM Usage | What's Running |
-|----------|-----------|----------------|
-| **🏠 Idle** | ~300MB | Sway + terminal |
-| **💻 Coding** | ~620MB | + Neovim + LSPs + databases |
-| **🌐 With Browser** | ~970MB | + Chromium (3 tabs) |
-| **🚀 Fullstack** | ~1.2GB | + all containers |
-| **🔨 Compiling** | ~810MB | Browser closed, compiler active |
+| Scenario            | RAM Usage | What's Running                  |
+| ------------------- | --------- | ------------------------------- |
+| **🏠 Idle**         | ~300MB    | Sway + terminal                 |
+| **💻 Coding**       | ~620MB    | + Neovim + LSPs + databases     |
+| **🌐 With Browser** | ~970MB    | + Chromium (3 tabs)             |
+| **🚀 Fullstack**    | ~1.2GB    | + all containers                |
+| **🔨 Compiling**    | ~810MB    | Browser closed, compiler active |
 
 ### **🔋 Battery Life** (estimated for portable devices)
 
-| Activity | Estimated Hours |
-|----------|----------------|
-| **Coding only** | 16-25 hours |
-| **With browser** | 8-12 hours |
-| **Heavy compilation** | 6-10 hours |
+| Activity              | Estimated Hours |
+| --------------------- | --------------- |
+| **Coding only**       | 16-25 hours     |
+| **With browser**      | 8-12 hours      |
+| **Heavy compilation** | 6-10 hours      |
 
 **💡 Tip:** Use `mem` and `memp` commands to monitor and optimize!
 
@@ -587,6 +631,7 @@ sudo systemctl restart spice-vdagentd.service
 ### **📚 More Help**
 
 **See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for:**
+
 - Shared folder mounting issues
 - Docker permission problems
 - Out of memory errors
@@ -597,12 +642,13 @@ sudo systemctl restart spice-vdagentd.service
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| **[QUICKSTART.md](QUICKSTART.md)** | Quick reference (also at `~/QUICKSTART.md` after install) |
-| **[UTM-CONFIG-GUIDE.md](UTM-CONFIG-GUIDE.md)** | UTM-specific configuration |
-| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Common issues and solutions |
-| **[arch-arm-setup-guide.md](arch-arm-setup-guide.md)** | Complete manual setup guide |
+| Document                                                               | Description                                               |
+| ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| **[INSTALL-FROM-UTM-GALLERY.md](INSTALL-FROM-UTM-GALLERY.md)** ⭐     | **Complete Mac/UTM installation guide (START HERE!)**     |
+| **[QUICKSTART.md](QUICKSTART.md)**                                     | Quick reference (also at `~/QUICKSTART.md` after install) |
+| **[UTM-CONFIG-GUIDE.md](UTM-CONFIG-GUIDE.md)**                         | UTM-specific configuration                                |
+| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**                           | Common issues and solutions                               |
+| **[arch-arm-setup-guide.md](arch-arm-setup-guide.md)**                 | Complete manual setup guide                               |
 
 ---
 

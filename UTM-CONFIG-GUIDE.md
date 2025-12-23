@@ -30,6 +30,45 @@ This guide covers the UTM-specific configuration needed before and after running
 - **Memory**: 4096 MB (4GB)
 - **CPU Cores**: 2-4 (depending on your host)
 
+#### Storage Configuration
+
+- **Disk Size**: **16GB or more recommended** (default 9GB is too small)
+  
+**IMPORTANT - Disk Size:**
+- The installer will **automatically detect and expand** your disk if you resize it in UTM
+- You can resize the disk BEFORE first boot for best results
+- Or resize it later and the installer will auto-expand on next run
+
+**How to set proper disk size:**
+
+**Option A: Before First Boot (Recommended)**
+1. In UTM, select your VM → **Settings** → **Drives**
+2. Select the main disk
+3. Click **"Resize"** or adjust the size slider
+4. Set to **16GB minimum** (32GB+ recommended for development)
+5. Save and start the VM
+
+**Option B: After Installation**
+1. Shut down the VM completely
+2. UTM → VM Settings → Drives → Select disk → Resize
+3. Set new size (e.g., 16GB → 32GB)
+4. Start the VM - the installer will auto-expand on next run
+
+**Option C: Manual Resize (Advanced - via Terminal on macOS)**
+```bash
+# Shut down VM first!
+cd "/Users/YOUR_USERNAME/Library/Containers/com.utmapp.UTM/Data/Documents/YOUR_VM.utm/Data"
+
+# Resize disk image (adds 23GB to existing 9GB = 32GB total)
+/Applications/UTM.app/Contents/MacOS/qemu-img resize disk-0.qcow2 +23G
+```
+
+The installer automatically:
+- ✅ Detects if running in UTM/QEMU
+- ✅ Checks for unallocated disk space
+- ✅ Expands the partition to use all available space
+- ✅ Resizes the filesystem automatically
+
 #### Display Configuration
 
 - **Emulated Display Card**: virtio-ramfb-gl (recommended) or virtio-gpu-gl
@@ -208,6 +247,26 @@ In UTM VM settings:
 1. **Drives** → Select your main drive
 2. **Interface**: VirtIO
 3. **Cache Mode**: Write-back (for better performance)
+
+### Verify Disk Expansion
+
+After the installer runs, check if disk was expanded:
+
+```bash
+# Check disk space
+df -h /
+
+# Should show your full disk size (e.g., 16GB, 32GB)
+# Not just the original 9GB
+
+# Check partition details
+lsblk
+
+# Example output:
+# NAME   SIZE
+# vda     32G    <- Full disk size
+# └─vda1  32G    <- Partition using all space
+```
 
 ### Network Performance
 
