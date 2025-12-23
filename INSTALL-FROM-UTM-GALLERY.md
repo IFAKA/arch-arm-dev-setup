@@ -56,35 +56,65 @@ We'll resize it to **32GB** (or your preferred size) BEFORE first boot.
 
 #### Option A: Using Terminal (Recommended - Precise Control)
 
-1. **Open Terminal** on your Mac
-2. **Navigate to the VM disk location:**
+1. **Install QEMU tools** (if not already installed):
    ```bash
+   brew install qemu
+   ```
+
+2. **Find your VM location:**
+   
+   If you downloaded from UTM Gallery, it's likely in:
+   ```bash
+   # Check Downloads folder
+   ls ~/Downloads/ArchLinux.utm/Data/*.qcow2
+   
+   # Or search for it
+   mdfind -name "ArchLinux.utm"
+   ```
+
+3. **Navigate to the VM disk location:**
+   ```bash
+   # For UTM Gallery downloads (most common)
+   cd ~/Downloads/ArchLinux.utm/Data
+   
+   # OR if you imported it to UTM's library
    cd ~/Library/Containers/com.utmapp.UTM/Data/Documents/ArchLinux.utm/Data
    ```
 
-3. **Check current disk size:**
+4. **Find the main disk file:**
    ```bash
-   /Applications/UTM.app/Contents/MacOS/qemu-img info disk-0.qcow2
+   # List all qcow2 files with sizes
+   ls -lh *.qcow2
+   
+   # The largest one is usually the main disk
+   # It will have a UUID name like: BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2
+   ```
+
+5. **Check current disk size:**
+   ```bash
+   # Replace with your actual filename
+   qemu-img info BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2
    ```
    
-   You should see: `virtual size: 9 GiB`
+   You should see: `virtual size: 9.77 GiB`
 
-4. **Resize the disk** (adds 23GB to make it 32GB total):
+6. **Resize the disk to 32GB:**
    ```bash
-   /Applications/UTM.app/Contents/MacOS/qemu-img resize disk-0.qcow2 +23G
+   # Replace with your actual filename
+   qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
    ```
 
-5. **Verify the new size:**
+7. **Verify the new size:**
    ```bash
-   /Applications/UTM.app/Contents/MacOS/qemu-img info disk-0.qcow2
+   qemu-img info BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 | grep "virtual size"
    ```
    
    You should now see: `virtual size: 32 GiB`
 
-**Want a different size?** Adjust the `+23G` value:
-- For 16GB total: `+7G`
-- For 40GB total: `+31G`
-- For 64GB total: `+55G`
+**Want a different size?** Just change the final size:
+- For 16GB: `qemu-img resize FILENAME.qcow2 16G`
+- For 40GB: `qemu-img resize FILENAME.qcow2 40G`
+- For 64GB: `qemu-img resize FILENAME.qcow2 64G`
 
 #### Option B: Using UTM GUI (If Available)
 
