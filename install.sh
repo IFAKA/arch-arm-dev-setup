@@ -108,10 +108,15 @@ auto_expand_disk() {
         return 0
     fi
     
-    log_info "Found ${unallocated_gb}GB unallocated space - installing tools..."
+    log_info "Found ${unallocated_gb}GB unallocated space - preparing system..."
     
-    # NOW install tools (only if we need them)
-    pacman -Sy --noconfirm --needed cloud-guest-utils parted e2fsprogs 2>&1 | grep -v "warning:" || true
+    # Update system first (UTM Gallery images may be outdated)
+    log_info "Updating system packages (this may take a few minutes)..."
+    pacman -Syu --noconfirm 2>&1 | tail -20 || true
+    
+    # NOW install tools
+    log_info "Installing disk expansion tools..."
+    pacman -S --noconfirm --needed cloud-guest-utils parted e2fsprogs 2>&1 | tail -10 || true
     
     # Verify parted is now available
     if ! command -v parted &>/dev/null; then
