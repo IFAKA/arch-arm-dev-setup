@@ -1,0 +1,32 @@
+# Backup files
+*.backup
+*.bak
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Log files
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Editor-specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# User-specific config (if testing locally)
+test-config/
+local-test/
+
+# Other projects in this directory
+oc-notify/
+opencode/
+tapcode/
+vimzap/
