@@ -101,6 +101,14 @@ alias h='history'
 alias c='clear'
 alias q='exit'
 
+# Media shortcuts
+alias yt='yt-dlp'
+alias ytv='yt-dlp -f "bestvideo[height<=720]+bestaudio/best[height<=720]"'  # 720p max (memory-friendly)
+alias yta='yt-dlp -x --audio-format mp3'  # Audio only
+
+# Browser
+alias web='firefox'
+
 # ════════════════════════════════════════════════════════════
 # Helper Functions
 # ════════════════════════════════════════════════════════════
@@ -190,6 +198,37 @@ backup() {
         echo "✓ Backed up: ${file}.backup-$(date +%Y%m%d-%H%M%S)"
     else
         echo "File not found: $file"
+    fi
+}
+
+# Watch YouTube in mpv (memory-friendly)
+ytplay() {
+    if [ -z "$1" ]; then
+        echo "Usage: ytplay <youtube-url>"
+        echo "Example: ytplay https://youtube.com/watch?v=..."
+        return 1
+    fi
+    
+    # Play at 720p max (saves RAM)
+    mpv --ytdl-format="bestvideo[height<=720]+bestaudio/best[height<=720]" "$1"
+}
+
+# Search and play YouTube (requires yt-dlp)
+ytsearch() {
+    if [ -z "$1" ]; then
+        echo "Usage: ytsearch <search terms>"
+        echo "Example: ytsearch linux tutorial"
+        return 1
+    fi
+    
+    echo "Searching YouTube for: $*"
+    local url=$(yt-dlp --get-id "ytsearch1:$*" 2>/dev/null)
+    
+    if [ -n "$url" ]; then
+        echo "Playing: https://youtube.com/watch?v=$url"
+        ytplay "https://youtube.com/watch?v=$url"
+    else
+        echo "No results found"
     fi
 }
 
@@ -319,6 +358,15 @@ mem              Check memory usage and top consumers
 memp             Check memory pressure and get suggestions
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 Media & Browser
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ytplay <url>     Watch YouTube video in mpv (720p max)
+ytsearch <term>  Search and play YouTube video
+web              Open Firefox browser
+yt <url>         Download YouTube video
+yta <url>        Download YouTube audio only
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⌨️  Shell & Tools
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 dev [name]       Start/attach tmux session
@@ -340,15 +388,19 @@ orphans          List orphaned packages
 🎹 Sway Keybindings
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Super+Enter          Open new terminal
+Super+w              Open Firefox browser
+Super+n              Open Neovim
 Super+d              Application launcher (wofi)
+Super+Tab            Switch between windows (like Alt+Tab)
 Super+1/2/3/4        Switch to workspace 1/2/3/4
 Super+Shift+1/2/3/4  Move window to workspace
 Super+f              Toggle fullscreen
+Super+r              Resize mode (arrows to resize, Esc to exit)
 Super+Space          Toggle floating mode
 Super+Arrows         Move focus between windows
 Super+Shift+Q        Close window
 Super+Shift+C        Reload Sway config
-Super+Shift+E        Exit Sway
+Super+Shift+E        Exit Sway (type 'sway' to restart)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📁 Git Shortcuts

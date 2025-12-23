@@ -325,6 +325,16 @@ dev myproject    # Start tmux session
 projects         # cd ~/projects
 ```
 
+#### **🎬 Media & Browser**
+
+```bash
+web              # Open Firefox
+ytplay <url>     # Watch YouTube in mpv (720p max - memory friendly)
+ytsearch <term>  # Search and play YouTube
+yt <url>         # Download YouTube video
+yta <url>        # Download audio only
+```
+
 </details>
 
 ---
@@ -378,23 +388,55 @@ projects         # cd ~/projects
 
 ---
 
-### **🪟 Sway Keybindings**
+### **🪟 Sway Window Manager - Complete Guide**
 
 **All keybindings work immediately after login:**
 
 <details>
 <summary><strong>🎮 Window Manager Controls (Click to expand)</strong></summary>
 
+#### **Applications**
+
 | Key | Action |
 |-----|--------|
-| `Super+Enter` | Open terminal |
-| `Super+d` | Application launcher |
-| `Super+1/2/3/4` | Switch workspaces |
+| `Super+Enter` | Open new terminal |
+| `Super+w` | Open Firefox browser |
+| `Super+n` | Open Neovim in terminal |
+| `Super+d` | Application launcher (wofi) |
+
+#### **Window Navigation**
+
+| Key | Action |
+|-----|--------|
+| `Super+Tab` | Switch between windows (like Alt+Tab) |
+| `Super+Shift+Tab` | Switch windows backwards |
+| `Super+Arrows` | Move focus between windows |
+| `Super+1/2/3/4` | Switch to workspace 1/2/3/4 |
+| `Super+Shift+1/2/3/4` | Move window to workspace |
+
+#### **Window Management**
+
+| Key | Action |
+|-----|--------|
 | `Super+f` | Toggle fullscreen |
-| `Super+Shift+Q` | Close window |
-| `Super+Shift+E` | Exit Sway |
+| `Super+r` | Enter resize mode (arrows to resize, Esc to exit) |
+| `Super+Space` | Toggle floating mode |
+| `Super+Shift+Q` | Close current window |
+
+#### **System**
+
+| Key | Action |
+|-----|--------|
+| `Super+Shift+C` | Reload Sway configuration |
+| `Super+Shift+E` | Exit Sway (drops to terminal) |
 
 *Super key = Windows key / Command key*
+
+**💡 Pro Tips:**
+- **If you close Sway** (`Super+Shift+E`): Just type `sway` to restart it
+- **Windows persist**: Your open windows will be restored
+- **Auto-restart on reboot**: Sway starts automatically when you login
+- **One workspace per task**: Use workspaces 1-4 for different projects
 
 </details>
 

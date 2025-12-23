@@ -24,7 +24,11 @@ phase_install_sway() {
         mako \
         xdg-desktop-portal-wlr \
         polkit \
-        light
+        light \
+        firefox \
+        mpv \
+        yt-dlp \
+        imv
     
     echo "[Phase 5] Creating Sway configuration..."
     
@@ -50,18 +54,37 @@ exec swayidle -w \
     resume 'swaymsg "output * dpms on"' \
   before-sleep 'swaylock -f -c 000000'
 
-# Key bindings
+# Key bindings - Basic
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+Shift+q kill
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+e exit
 
+# Applications
+bindsym $mod+w exec firefox
+bindsym $mod+n exec $term -e nvim
+
+# Window cycling (like Alt+Tab)
+bindsym $mod+Tab focus next
+bindsym $mod+Shift+Tab focus prev
+
 # Movement
 bindsym $mod+Left focus left
 bindsym $mod+Down focus down
 bindsym $mod+Up focus up
 bindsym $mod+Right focus right
+
+# Resize mode (Super+r to enter, arrow keys to resize, Escape to exit)
+mode "resize" {
+    bindsym Left resize shrink width 10px
+    bindsym Down resize grow height 10px
+    bindsym Up resize shrink height 10px
+    bindsym Right resize grow width 10px
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
 
 # Workspaces
 bindsym $mod+1 workspace 1
@@ -255,11 +278,21 @@ EOF
 ║  Sway Keybindings:                                        ║
 ║  ────────────────────────────────────────────────────     ║
 ║  Super+Enter        Open new terminal                     ║
+║  Super+w            Open Firefox browser                  ║
+║  Super+n            Open Neovim in terminal               ║
 ║  Super+d            Application launcher                  ║
+║  Super+Tab          Switch between windows                ║
 ║  Super+1/2/3/4      Switch to workspace 1/2/3/4           ║
 ║  Super+f            Toggle fullscreen                     ║
+║  Super+r            Resize mode                           ║
 ║  Super+Shift+Q      Close window                          ║
 ║  Super+Shift+E      Exit Sway                             ║
+║                                                           ║
+║  Media Commands:                                          ║
+║  ────────────────────────────────────────────────────     ║
+║  ytplay <url>       Watch YouTube in mpv                  ║
+║  ytsearch <terms>   Search and play YouTube               ║
+║  web                Open Firefox                          ║
 ║                                                           ║
 ║  Documentation:                                           ║
 ║  ────────────────────────────────────────────────────     ║
@@ -275,6 +308,47 @@ EOF
     # Create first-login marker (will be deleted after first display)
     touch "$user_home/.first-login"
     
+    # Configure mpv for memory-efficient video playback
+    echo "Configuring mpv..."
+    mkdir -p "$user_home/.config/mpv"
+    
+    cat > "$user_home/.config/mpv/mpv.conf" <<'EOF'
+# mpv Configuration - Memory-Optimized for 4GB RAM
+# ═══════════════════════════════════════════════════
+
+# Video settings (720p max to save memory)
+ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]
+
+# Hardware decoding (if available)
+hwdec=auto
+
+# Cache settings (memory-friendly)
+cache=yes
+demuxer-max-bytes=50M
+demuxer-max-back-bytes=20M
+
+# Performance
+vo=gpu
+profile=gpu-hq
+scale=bilinear
+cscale=bilinear
+
+# Audio
+volume=70
+volume-max=100
+
+# OSD settings
+osd-level=1
+osd-duration=2000
+
+# Screenshot
+screenshot-format=png
+screenshot-directory=~/Pictures
+
+# Keep window open after playback
+keep-open=yes
+EOF
+    
     # Set ownership
     chown -R "$username:$username" "$user_home/.config"
     chown "$username:$username" "$user_home/.bash_profile"
@@ -284,4 +358,6 @@ EOF
     
     echo "[Phase 5] Sway installed and configured with auto-start"
     echo "  ✓ Auto-start configured for both Bash and Zsh"
+    echo "  ✓ Firefox, mpv, and yt-dlp installed"
+    echo "  ✓ Window switching (Super+Tab) configured"
 }
