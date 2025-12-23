@@ -57,10 +57,17 @@ This guide covers the UTM-specific configuration needed before and after running
 **Option C: Manual Resize (Advanced - via Terminal on macOS)**
 ```bash
 # Shut down VM first!
-cd "/Users/YOUR_USERNAME/Library/Containers/com.utmapp.UTM/Data/Documents/YOUR_VM.utm/Data"
 
-# Resize disk image (adds 23GB to existing 9GB = 32GB total)
-/Applications/UTM.app/Contents/MacOS/qemu-img resize disk-0.qcow2 +23G
+# Install qemu tools
+brew install qemu
+
+# For UTM Gallery downloads (most common):
+cd ~/Downloads/ArchLinux.utm/Data
+qemu-img resize *.qcow2 32G
+
+# OR if you imported it to UTM's library:
+# cd ~/Library/Containers/com.utmapp.UTM/Data/Documents/ArchLinux.utm/Data
+# qemu-img resize *.qcow2 32G
 ```
 
 The installer automatically:

@@ -414,13 +414,18 @@ Check if the disk was actually resized:
 
 **On macOS:**
 ```bash
-cd ~/Library/Containers/com.utmapp.UTM/Data/Documents/ArchLinux.utm/Data
-/Applications/UTM.app/Contents/MacOS/qemu-img info disk-0.qcow2
+# Make sure qemu is installed
+brew install qemu
+
+# Check the disk size (adjust path if needed)
+cd ~/Downloads/ArchLinux.utm/Data
+qemu-img info *.qcow2 | grep "virtual size"
 ```
 
 If it shows 9GB, you need to resize it:
 ```bash
-/Applications/UTM.app/Contents/MacOS/qemu-img resize disk-0.qcow2 +23G
+# Shut down the VM first!
+qemu-img resize *.qcow2 32G
 ```
 
 Then **in the VM**, manually expand:
