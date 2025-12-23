@@ -76,10 +76,7 @@ auto_expand_disk() {
     
     log_info "Detected VM environment: $virt_type"
     
-    # Install required tools quietly
-    pacman -S --noconfirm --needed cloud-guest-utils parted e2fsprogs &>/dev/null || true
-    
-    # Find root device
+    # Find root device first
     local root_mount=$(findmnt -n -o SOURCE /)
     local root_device=""
     
@@ -92,48 +89,62 @@ auto_expand_disk() {
     
     local part_num=$(echo "$root_mount" | grep -o '[0-9]*$')
     
-    # Check unallocated space
+    # Check unallocated space using lsblk (works without parted)
     local disk_size=$(blockdev --getsize64 "$root_device" 2>/dev/null || echo "0")
-    local part_end=$(parted -s "$root_device" unit B print 2>/dev/null | grep "^ $part_num" | awk '{print $3}' | sed 's/B//')
+    local part_size=$(lsblk -b -n -o SIZE "$root_mount" 2>/dev/null || echo "0")
     
-    if [ "$disk_size" = "0" ] || [ -z "$part_end" ]; then
+    if [ "$disk_size" = "0" ] || [ "$part_size" = "0" ]; then
         log_warning "Could not determine disk sizes, skipping expansion"
         return 0
     fi
     
-    local unallocated=$((disk_size - part_end))
+    # Calculate unallocated space (disk size - partition size)
+    local unallocated=$((disk_size - part_size))
     local unallocated_gb=$((unallocated / 1024 / 1024 / 1024))
     
-    # If more than 500MB unallocated, expand
-    if [ $unallocated -gt 524288000 ]; then
-        log_info "Found ${unallocated_gb}GB unallocated space - expanding disk..."
-        
-        # Expand partition
-        if command -v growpart &>/dev/null; then
-            growpart "$root_device" "$part_num" &>/dev/null || \
-                parted -s "$root_device" resizepart "$part_num" 100% &>/dev/null
-        else
-            parted -s "$root_device" resizepart "$part_num" 100% &>/dev/null
-        fi
-        
-        # Expand filesystem
-        local fs_type=$(findmnt -n -o FSTYPE "$root_mount")
-        case "$fs_type" in
-            ext4|ext3|ext2)
-                resize2fs "$root_mount" &>/dev/null
-                ;;
-            xfs)
-                xfs_growfs "$root_mount" &>/dev/null
-                ;;
-            btrfs)
-                btrfs filesystem resize max "$root_mount" &>/dev/null
-                ;;
-        esac
-        
-        log_success "Disk expanded successfully! (+${unallocated_gb}GB)"
-    else
+    # Only proceed if there's significant unallocated space
+    if [ $unallocated -le 524288000 ]; then
         log_info "No unallocated space found"
+        return 0
     fi
+    
+    log_info "Found ${unallocated_gb}GB unallocated space - installing tools..."
+    
+    # NOW install tools (only if we need them)
+    pacman -Sy --noconfirm --needed cloud-guest-utils parted e2fsprogs 2>&1 | grep -v "warning:" || true
+    
+    # Verify parted is now available
+    if ! command -v parted &>/dev/null; then
+        log_warning "Failed to install parted, skipping expansion"
+        return 0
+    fi
+    
+    log_info "Expanding disk to use all ${unallocated_gb}GB..."
+    
+    # Expand partition
+    if command -v growpart &>/dev/null; then
+        growpart "$root_device" "$part_num" 2>&1 | grep -v "CHANGED" || \
+            parted -s "$root_device" resizepart "$part_num" 100% 2>&1
+    else
+        parted -s "$root_device" resizepart "$part_num" 100% 2>&1
+    fi
+    
+    # Expand filesystem
+    local fs_type=$(findmnt -n -o FSTYPE "$root_mount")
+    log_info "Expanding ${fs_type} filesystem..."
+    case "$fs_type" in
+        ext4|ext3|ext2)
+            resize2fs "$root_mount" 2>&1 | grep -E "(resized|nothing to do)" || true
+            ;;
+        xfs)
+            xfs_growfs "$root_mount" 2>&1 | tail -1 || true
+            ;;
+        btrfs)
+            btrfs filesystem resize max "$root_mount" 2>&1 | tail -1 || true
+            ;;
+    esac
+    
+    log_success "Disk expanded successfully! (+${unallocated_gb}GB)"
 }
 
 # Pre-flight checks
