@@ -23,7 +23,10 @@ Perfect for UTM virtual machines on Apple Silicon Macs or physical ARM devices l
 # 2. Resize disk BEFORE first boot (32GB recommended):
 brew install qemu
 cd ~/Downloads/ArchLinux.utm/Data
-qemu-img resize *.qcow2 32G
+# Find the largest .qcow2 file (that's your main disk)
+ls -lh *.qcow2
+# Resize it (replace FILENAME with the largest file)
+qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
 
 # 3. Start VM, login as root/root, then run:
 pacman -Sy git

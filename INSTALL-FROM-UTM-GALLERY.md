@@ -86,8 +86,12 @@ We'll resize it to **32GB** (or your preferred size) BEFORE first boot.
    # List all qcow2 files with sizes
    ls -lh *.qcow2
    
-   # The largest one is usually the main disk
-   # It will have a UUID name like: BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2
+   # You'll see 2-3 files. The LARGEST one is your main disk
+   # Example output:
+   # -rw-r--r--  320K  5A4F98B5-7C76-4737-9CEE-4E8B7260A46C.qcow2  <- EFI boot (small)
+   # -rw-r--r--  555M  BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2  <- MAIN DISK (large)
+   
+   # Copy the filename of the LARGEST file for the next step
    ```
 
 5. **Check current disk size:**
@@ -100,8 +104,10 @@ We'll resize it to **32GB** (or your preferred size) BEFORE first boot.
 
 6. **Resize the disk to 32GB:**
    ```bash
-   # Replace with your actual filename
+   # Replace BB208CBD... with YOUR actual largest filename from step 4
    qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
+   
+   # The command will output: "Image resized."
    ```
 
 7. **Verify the new size:**
@@ -419,13 +425,19 @@ brew install qemu
 
 # Check the disk size (adjust path if needed)
 cd ~/Downloads/ArchLinux.utm/Data
-qemu-img info *.qcow2 | grep "virtual size"
+
+# List files to find the largest one
+ls -lh *.qcow2
+
+# Check the virtual size of the largest file
+qemu-img info BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 | grep "virtual size"
 ```
 
-If it shows 9GB, you need to resize it:
+If it shows 9GB or 9.77GB, you need to resize it:
 ```bash
 # Shut down the VM first!
-qemu-img resize *.qcow2 32G
+# Replace with YOUR actual largest filename
+qemu-img resize BB208CBD-BFB4-4895-9542-48527C9E5473.qcow2 32G
 ```
 
 Then **in the VM**, manually expand:
