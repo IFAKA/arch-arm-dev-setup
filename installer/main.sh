@@ -60,12 +60,48 @@ safe_pacman() {
 # Export so phase scripts can use it
 export -f safe_pacman
 
-# Override pacman command in subshells to use safe_pacman automatically
-# This way existing phase scripts work without modification
-pacman() {
-    safe_pacman /usr/bin/pacman "$@"
+# Create a wrapper script in /usr/local/bin that takes precedence over /usr/bin/pacman
+# This ensures ALL pacman calls (even in sourced scripts) use safe_pacman
+create_pacman_wrapper() {
+    mkdir -p /usr/local/bin
+    cat > /usr/local/bin/pacman << 'PACMAN_WRAPPER'
+#!/bin/bash
+# Temporary wrapper for pacman to handle Landlock errors during installation
+# This script is created by the installer and should be removed after reboot
+
+output_file="/tmp/pacman-wrapper-$$.log"
+exit_code=0
+
+# Try normal pacman first
+/usr/bin/pacman "$@" 2>&1 | tee "$output_file"
+exit_code=${PIPESTATUS[0]}
+
+# If successful, clean up and return
+if [ $exit_code -eq 0 ]; then
+    rm -f "$output_file"
+    exit 0
+fi
+
+# Check if it was a Landlock/sandbox error
+if grep -qi "landlock.*not supported\|sandbox.*failed" "$output_file" 2>/dev/null; then
+    echo "[WARN] Pacman sandbox not supported, retrying with --disable-sandbox" >&2
+    # Retry with --disable-sandbox
+    /usr/bin/pacman --disable-sandbox "$@" 2>&1
+    exit_code=$?
+fi
+
+rm -f "$output_file"
+exit $exit_code
+PACMAN_WRAPPER
+    
+    chmod +x /usr/local/bin/pacman
+    
+    # Make sure /usr/local/bin is in PATH before /usr/bin
+    export PATH="/usr/local/bin:$PATH"
 }
-export -f pacman
+
+# Create the wrapper before running any phases
+create_pacman_wrapper
 
 # Installation state
 INSTALL_LOG="/var/log/arch-arm-setup.log"
@@ -450,6 +486,10 @@ The system will reboot in ${countdown} seconds..."
     echo "$NEW_USERNAME" > /etc/arch-arm-dev-setup-user
     
     log_to_file "Rebooting system"
+    
+    # Clean up pacman wrapper (no longer needed after reboot with new kernel)
+    rm -f /usr/local/bin/pacman
+    log_to_file "Removed temporary pacman wrapper"
     
     # Reboot
     systemctl reboot

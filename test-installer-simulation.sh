@@ -137,10 +137,17 @@ test_required_functions() {
         log_fail "installer/main.sh missing safe_pacman()"
     fi
     
-    if grep -q "export -f pacman" installer/main.sh; then
-        log_pass "installer/main.sh exports pacman override"
+    if grep -q "create_pacman_wrapper" installer/main.sh; then
+        log_pass "installer/main.sh creates pacman wrapper script"
     else
-        log_fail "installer/main.sh missing pacman override export"
+        log_fail "installer/main.sh missing pacman wrapper creation"
+    fi
+    
+    # Check that wrapper script handles Landlock
+    if grep -q "/usr/local/bin/pacman" installer/main.sh; then
+        log_pass "installer/main.sh uses /usr/local/bin for wrapper"
+    else
+        log_warn "Pacman wrapper path not found"
     fi
 }
 
