@@ -1,8 +1,36 @@
 # 🛡️ Edge Cases Coverage
 
-This document lists all edge cases handled by the installer's `upgrade_system()` function.
+This document lists all edge cases handled by the installer.
 
-## ✅ All 18 Edge Cases Covered
+## ✅ All 22 Edge Cases Covered
+
+### Whiptail Installation (4 edge cases)
+
+### **19. Pacman Sandbox/Landlock Not Supported**
+- **Scenario:** pacman 7.1.0+ requires kernel 5.13+ for Landlock LSM security
+- **Handling:** Detects error, retries with `--disable-sandbox` flag
+- **Code:** `grep -qi "landlock\|sandbox" /tmp/whiptail-install.log`
+- **Impact:** Allows install on fresh UTM Gallery images (kernel 5.10)
+
+### **20. --disable-sandbox Flag Unavailable**
+- **Scenario:** Very old pacman versions don't support --disable-sandbox
+- **Handling:** Falls back to manual package extraction
+- **Code:** `pacman -Sw` to download, `tar -xf` to extract
+- **Impact:** Works even on ancient pacman versions
+
+### **21. Whiptail Already Installed But Broken**
+- **Scenario:** Binary exists but doesn't execute properly
+- **Handling:** Detects with `whiptail --version`, forces reinstall
+- **Code:** `if whiptail --version &>/dev/null; then`
+- **Impact:** Ensures working TUI before launching installer
+
+### **22. Network Failure During Whiptail Download**
+- **Scenario:** pacman can't reach package mirrors
+- **Handling:** Clear error message with manual recovery steps
+- **Code:** Error logged, instructions shown
+- **Impact:** User knows exactly what to do
+
+### System Upgrade (18 edge cases)
 
 ### **1. Missing glibc Version Detection**
 - **Scenario:** `ldd --version` fails or returns empty
@@ -157,4 +185,5 @@ Failed: 0
 ---
 
 **Last Updated:** December 24, 2025  
-**Test Coverage:** 18/18 edge cases (100%)
+**Test Coverage:** 22/22 edge cases (100%)  
+**Scope:** Complete autonomous installation from fresh UTM Gallery image
