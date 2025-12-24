@@ -265,23 +265,44 @@ upgrade_system() {
     
     # Clean /boot to prevent "no space left" errors during kernel upgrade
     log_info "Cleaning /boot partition..."
+    
+    # Remove old backup files if they exist
     rm -f /boot/initramfs-linux-fallback.img.old 2>/dev/null || true
     rm -f /boot/initramfs-linux.img.old 2>/dev/null || true
     rm -f /boot/vmlinuz-linux.old 2>/dev/null || true
     
-    # Verify sufficient space (need at least 100MB for kernel upgrade)
+    # Check space after removing .old files
     local boot_avail_mb=$(df /boot | awk 'NR==2 {print int($4/1024)}')
     local boot_avail_human=$(df -h /boot | awk 'NR==2 {print $4}')
     
+    # If still insufficient, remove fallback image (will be recreated during upgrade)
+    if [ "$boot_avail_mb" -lt 100 ]; then
+        log_info "Insufficient space (${boot_avail_human}), removing fallback initramfs..."
+        log_info "It will be automatically recreated during system upgrade"
+        
+        if [ -f /boot/initramfs-linux-fallback.img ]; then
+            local fallback_size=$(du -h /boot/initramfs-linux-fallback.img | awk '{print $1}')
+            rm -f /boot/initramfs-linux-fallback.img
+            log_success "Removed fallback image (${fallback_size})"
+        fi
+        
+        # Re-check space
+        boot_avail_mb=$(df /boot | awk 'NR==2 {print int($4/1024)}')
+        boot_avail_human=$(df -h /boot | awk 'NR==2 {print $4}')
+    fi
+    
+    # Final space check
     if [ "$boot_avail_mb" -lt 100 ]; then
         log_error "/boot partition critically low on space: ${boot_avail_human} available"
         log_error "Need at least 100MB for kernel upgrade"
         echo ""
-        echo "Manual cleanup required:"
-        echo "  rm -f /boot/initramfs-linux-fallback.img.old"
-        echo "  rm -f /boot/initramfs-linux.img.old"
-        echo "  rm -f /boot/vmlinuz-linux.old"
+        echo "Current /boot contents:"
+        ls -lh /boot/ | tail -n +2
         echo ""
+        echo "Manual cleanup required. Try:"
+        echo "  rm -f /boot/initramfs-linux-fallback.img  # Will be recreated"
+        echo ""
+        echo "Or resize the /boot partition to at least 300MB."
         echo "Then re-run this script."
         exit 1
     fi
