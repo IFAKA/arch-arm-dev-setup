@@ -403,6 +403,39 @@ See [LICENSE](LICENSE) for full text.
 
 ---
 
+## 🚀 Recent Improvements (Dec 2025)
+
+### Two-Script Installation System
+- **macOS Pre-Install Script:** Automatic UTM VM detection, disk resizing, fully automated
+- **VM Bootstrap Script:** One-line installer with disk expansion, system upgrade, TUI wizard
+
+### Disk & System Management
+- ✅ **Automatic Disk Expansion:** Detects unallocated space, expands before packages
+- ✅ **/boot Space Verification:** Pre-checks 100MB+ free space before kernel upgrades
+- ✅ **System Upgrade Detection:** Auto-upgrades outdated UTM Gallery images (glibc 2.36→2.38)
+- ✅ **Recovery Instructions:** Clear error messages with specific fix commands
+
+### UX Improvements
+- ✅ **Automatic Timezone Detection:** IP geolocation with user confirmation
+- ✅ **Clean ASCII TUI:** No emoji/Unicode issues in serial consoles
+- ✅ **Kernel Message Suppression:** `dmesg -n 1` prevents log spam during install
+- ✅ **Sway Auto-Start:** Works on both tty1 and ttyAMA0 (UTM serial console)
+- ✅ **Zero-Prompt Automation:** Mac script runs without user input
+
+### Error Prevention
+- ✅ **sfdisk Fallback:** Disk expansion works without pre-installing parted
+- ✅ **/boot Cleanup:** Auto-removes old kernel images before upgrade
+- ✅ **Space Verification:** Fails early with instructions if insufficient
+- ✅ **VM Running Detection:** macOS script detects active VM automatically
+
+**Latest Commits:**
+- `7772f61` - /boot space verification + error recovery (Dec 24, 2025)
+- `bbfc61e` - Clean /boot before system upgrade (Dec 24, 2025)
+- `7e4f0ca` - Fully automatic macOS pre-install (Dec 23, 2025)
+- `acd11ac` - UX fixes: ASCII TUI, timezone, Sway autostart (Dec 23, 2025)
+
+---
+
 **Repository:** https://github.com/IFAKA/arch-arm-dev-setup
 
 **Star the repo if it helped you!** ⭐
