@@ -16,6 +16,19 @@ Perfect for UTM virtual machines on Apple Silicon Macs or physical ARM devices l
 
 **📖 Complete step-by-step guide:** [**INSTALL-FROM-UTM-GALLERY.md**](INSTALL-FROM-UTM-GALLERY.md) ⭐
 
+#### **⚡ Super Quick Setup (2 Commands)**
+
+```bash
+# 1. On macOS - Prepare the VM (downloads, resizes disk to 32GB):
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/macos-pre-install.sh | bash
+
+# 2. In the VM (after booting) - Install everything:
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
+```
+
+<details>
+<summary><strong>📖 Manual Setup (if you prefer step-by-step)</strong></summary>
+
 ```bash
 # 1. Download Arch Linux ARM from UTM Gallery
 #    https://mac.getutm.app/gallery/archlinux-arm
@@ -30,6 +43,8 @@ qemu-img resize "$(ls -S *.qcow2 | head -1)" 32G
 curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 # ✨ The installer will automatically expand your disk to use all 32GB!
 ```
+
+</details>
 
 ### 🐧 For Existing Arch Linux ARM Systems
 
