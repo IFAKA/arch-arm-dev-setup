@@ -57,6 +57,52 @@ show_banner() {
 EOF
 }
 
+# Wrapper for pacman that handles Landlock/sandbox errors automatically
+safe_pacman() {
+    local output_file="/tmp/pacman-safe-$$.log"
+    local exit_code=0
+    
+    # Try normal pacman first
+    "$@" 2>&1 | tee "$output_file"
+    exit_code=${PIPESTATUS[0]}
+    
+    # If successful, clean up and return
+    if [ $exit_code -eq 0 ]; then
+        rm -f "$output_file"
+        return 0
+    fi
+    
+    # Check if it was a Landlock/sandbox error
+    if grep -qi "landlock.*not supported\|sandbox.*failed" "$output_file" 2>/dev/null; then
+        echo "[WARN] Pacman sandbox not supported on this kernel, retrying with --disable-sandbox"
+        
+        # Build new command with --disable-sandbox flag
+        # Need to insert it after 'pacman' command but before operation flags
+        local cmd_array=("$@")
+        local new_cmd=()
+        local found_pacman=false
+        
+        for arg in "${cmd_array[@]}"; do
+            new_cmd+=("$arg")
+            # Add --disable-sandbox right after pacman command
+            if [[ "$arg" == *"pacman"* ]] && [ "$found_pacman" = false ]; then
+                new_cmd+=("--disable-sandbox")
+                found_pacman=true
+            fi
+        done
+        
+        # Try with --disable-sandbox
+        if "${new_cmd[@]}" 2>&1; then
+            rm -f "$output_file"
+            return 0
+        fi
+    fi
+    
+    # Command failed for other reasons - preserve exit code
+    rm -f "$output_file"
+    return $exit_code
+}
+
 # Auto-expand disk if running in VM (before disk space check)
 auto_expand_disk() {
     log_info "Checking for expandable disk space..."
@@ -116,7 +162,7 @@ auto_expand_disk() {
         log_warning "sfdisk failed, trying parted method..."
         
         # Fallback: install parted (but don't upgrade system first)
-        pacman -S --noconfirm --needed parted &>/dev/null || {
+        safe_pacman pacman -S --noconfirm --needed parted &>/dev/null || {
             log_warning "Could not install parted, skipping expansion"
             return 0
         }
@@ -377,7 +423,7 @@ upgrade_system() {
     
     # Full system upgrade with enhanced error handling
     log_info "Running pacman -Syu (this may take several minutes)..."
-    if ! pacman -Syu --noconfirm 2>&1 | tee /tmp/pacman-upgrade.log; then
+    if ! safe_pacman pacman -Syu --noconfirm 2>&1 | tee /tmp/pacman-upgrade.log; then
         log_error "System upgrade failed"
         echo ""
         
@@ -483,28 +529,16 @@ install_whiptail() {
         fi
     fi
     
-    # Try normal install first
-    if pacman -S --noconfirm libnewt 2>&1 | tee /tmp/whiptail-install.log; then
+    # Use safe_pacman wrapper that handles Landlock automatically
+    if safe_pacman pacman -S --noconfirm libnewt 2>&1 | tee /tmp/whiptail-install.log; then
         log_success "Whiptail installed"
+        rm -f /tmp/whiptail-install.log
         return 0
     fi
     
-    # Check if failure was due to Landlock/sandbox issue (pacman 7.1.0+ on old kernels)
-    if grep -qi "landlock\|sandbox" /tmp/whiptail-install.log 2>/dev/null; then
-        log_warning "Pacman sandbox not supported on this kernel, using fallback method"
-        log_info "This is expected on older kernels and will be fixed after reboot"
-        
-        # Try with sandbox disabled (requires pacman 6.1.0+)
-        if pacman -S --noconfirm --disable-sandbox libnewt 2>/dev/null; then
-            log_success "Whiptail installed (sandbox disabled)"
-            rm -f /tmp/whiptail-install.log
-            return 0
-        fi
-        
-        # Last resort: manual extraction from cache
-        log_info "Attempting manual package extraction..."
-        pacman -Sw --noconfirm --cachedir /tmp/pkg-cache libnewt 2>/dev/null
-        
+    # If safe_pacman failed, try manual extraction as last resort
+    log_warning "Standard install failed, attempting manual package extraction..."
+    if safe_pacman pacman -Sw --noconfirm --cachedir /tmp/pkg-cache libnewt 2>/dev/null; then
         if ls /tmp/pkg-cache/libnewt-*.pkg.tar.* &>/dev/null; then
             cd /
             tar -xf /tmp/pkg-cache/libnewt-*.pkg.tar.* 2>/dev/null
