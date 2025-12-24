@@ -241,13 +241,50 @@ init_pacman() {
     log_success "Package database updated"
 }
 
+# Upgrade system packages (required for outdated UTM Gallery images)
+upgrade_system() {
+    # Check if system is severely outdated (glibc < 2.38)
+    local glibc_version=$(ldd --version | head -1 | awk '{print $NF}')
+    local needs_upgrade=false
+    
+    # Simple version check - if glibc is 2.3x where x < 8, we need upgrade
+    if [[ $glibc_version =~ ^2\.3[0-7] ]] || [[ $glibc_version =~ ^2\.[0-2] ]]; then
+        needs_upgrade=true
+    fi
+    
+    if [ "$needs_upgrade" = false ]; then
+        log_info "System packages are up to date"
+        return 0
+    fi
+    
+    log_warning "Outdated system detected (glibc $glibc_version < 2.38)"
+    log_info "Upgrading system packages (this will take 5-10 minutes)..."
+    echo "      This is necessary for UTM Gallery images which are outdated."
+    echo "      Your disk has been expanded, so there's plenty of space now."
+    echo ""
+    
+    # Full system upgrade
+    pacman -Syu --noconfirm || {
+        log_error "System upgrade failed"
+        log_info "Attempting to continue anyway..."
+        return 0
+    }
+    
+    log_success "System upgrade complete!"
+}
+
 # Install whiptail (libnewt) for beautiful TUI
 install_whiptail() {
     log_info "Installing TUI framework (whiptail)..."
     
     if command -v whiptail &> /dev/null; then
-        log_success "Whiptail already installed"
-        return 0
+        # Verify whiptail actually works (not just installed)
+        if whiptail --version &>/dev/null; then
+            log_success "Whiptail already installed and working"
+            return 0
+        else
+            log_warning "Whiptail installed but not working, reinstalling..."
+        fi
     fi
     
     pacman -S --noconfirm libnewt
@@ -298,6 +335,7 @@ main() {
     
     preflight_checks
     init_pacman
+    upgrade_system
     install_whiptail
     download_installer
     
