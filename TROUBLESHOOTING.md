@@ -462,7 +462,48 @@ sudo pacman -Su
 
 ---
 
-### 15. System Won't Boot
+### 15. System Upgrade Failed - /boot Partition Full
+
+**Error:**
+```
+gzip: stdout: No space left on device
+bsdtar: Write error
+==> ERROR: Initcpio image generation FAILED
+error: failed to commit transaction (failed to retrieve some files)
+```
+
+**Cause:** The /boot partition (200MB) fills up during kernel upgrades because old kernel images are kept as backups.
+
+**Solution:**
+
+```bash
+# 1. Check /boot space
+df -h /boot
+
+# 2. List files taking up space
+ls -lh /boot/
+
+# 3. Remove old kernel images
+sudo rm -f /boot/initramfs-linux-fallback.img.old
+sudo rm -f /boot/initramfs-linux.img.old
+sudo rm -f /boot/vmlinuz-linux.old
+
+# 4. Verify space freed
+df -h /boot
+# Should now have 100MB+ free
+
+# 5. Complete the system upgrade
+sudo pacman -Syu --noconfirm
+
+# 6. Re-run the installer
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
+```
+
+**Prevention:** The installer now automatically cleans /boot before upgrades. This issue should only affect systems that started the upgrade before this fix was added (commit bbfc61e).
+
+---
+
+### 16. System Won't Boot
 
 **If you can access recovery:**
 

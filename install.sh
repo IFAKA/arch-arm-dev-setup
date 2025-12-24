@@ -269,16 +269,49 @@ upgrade_system() {
     rm -f /boot/initramfs-linux.img.old 2>/dev/null || true
     rm -f /boot/vmlinuz-linux.old 2>/dev/null || true
     
-    # Show available space
-    local boot_avail=$(df -h /boot | awk 'NR==2 {print $4}')
-    log_info "/boot partition has $boot_avail available"
+    # Verify sufficient space (need at least 100MB for kernel upgrade)
+    local boot_avail_mb=$(df /boot | awk 'NR==2 {print int($4/1024)}')
+    local boot_avail_human=$(df -h /boot | awk 'NR==2 {print $4}')
+    
+    if [ "$boot_avail_mb" -lt 100 ]; then
+        log_error "/boot partition critically low on space: ${boot_avail_human} available"
+        log_error "Need at least 100MB for kernel upgrade"
+        echo ""
+        echo "Manual cleanup required:"
+        echo "  rm -f /boot/initramfs-linux-fallback.img.old"
+        echo "  rm -f /boot/initramfs-linux.img.old"
+        echo "  rm -f /boot/vmlinuz-linux.old"
+        echo ""
+        echo "Then re-run this script."
+        exit 1
+    fi
+    
+    log_success "/boot partition has ${boot_avail_human} available (${boot_avail_mb}MB)"
     
     # Full system upgrade
-    pacman -Syu --noconfirm || {
+    if ! pacman -Syu --noconfirm; then
         log_error "System upgrade failed"
-        log_info "Attempting to continue anyway..."
+        echo ""
+        
+        # Check if it was a /boot space issue
+        local boot_free=$(df /boot | awk 'NR==2 {print int($4/1024)}')
+        if [ "$boot_free" -lt 50 ]; then
+            log_error "Failure likely caused by insufficient /boot space"
+            echo ""
+            echo "Recovery steps:"
+            echo "  1. Clean /boot manually:"
+            echo "     rm -f /boot/*.old"
+            echo "  2. Re-run the upgrade:"
+            echo "     pacman -Syu --noconfirm"
+            echo "  3. Re-run this installer"
+            echo ""
+            exit 1
+        fi
+        
+        log_warning "Attempting to continue with existing packages..."
+        log_warning "Some features may not work correctly"
         return 0
-    }
+    fi
     
     log_success "System upgrade complete!"
 }
