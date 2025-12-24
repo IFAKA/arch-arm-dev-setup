@@ -42,35 +42,35 @@ detect_utm() {
 # Welcome screen
 show_welcome() {
     ui_welcome "Welcome to Arch ARM Dev Setup" \
-"🚀 Transform your Arch Linux ARM into a complete development environment!
+"Transform your Arch Linux ARM into a complete development environment!
 
 What you'll get:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ Complete Development Stack
-  • Node.js (LTS via nvm) + pnpm
-  • Go, Rust, Python, C/C++
-  • Docker with memory optimization
+================================================================
+[+] Complete Development Stack
+    - Node.js (LTS via nvm) + pnpm
+    - Go, Rust, Python, C/C++
+    - Docker with memory optimization
   
-✓ Beautiful Window Manager
-  • Sway (Wayland) - minimal & battery-optimized
-  • Auto-starts on login (zero setup)
-  • Terminal ready immediately
+[+] Beautiful Window Manager
+    - Sway (Wayland) - minimal & battery-optimized
+    - Auto-starts on login (zero setup)
+    - Terminal ready immediately
   
-✓ Databases & Tools
-  • PostgreSQL, Redis, MongoDB (Docker)
-  • Neovim, tmux, ripgrep, fzf, btop
+[+] Databases & Tools
+    - PostgreSQL, Redis, MongoDB (Docker)
+    - Neovim, tmux, ripgrep, fzf, btop
   
-✓ Memory Efficiency
-  • zram compression (~6GB effective memory)
-  • Optimized for 4GB RAM systems
-  • Smart resource management
+[+] Memory Efficiency
+    - zram compression (~6GB effective memory)
+    - Optimized for 4GB RAM systems
+    - Smart resource management
   
-✓ Developer Experience
-  • Instant productivity after install
-  • Smart aliases and commands
-  • Discoverable help system
+[+] Developer Experience
+    - Instant productivity after install
+    - Smart aliases and commands
+    - Discoverable help system
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+================================================================
 Time required: ~60 minutes
 Disk space: ~4GB
 Internet: Required
@@ -90,9 +90,9 @@ collect_user_info() {
 "Enter your username:
 
 Requirements:
-• Lowercase letters, numbers, - or _
-• Must start with a letter
-• No spaces
+  - Lowercase letters, numbers, - or _
+  - Must start with a letter
+  - No spaces
 
 This will be your main user account." "dev")
         
@@ -141,26 +141,52 @@ This will be your main user account." "dev")
 
 # Collect system configuration
 collect_system_config() {
-    # Get timezone
-    local timezone_valid=false
-    while [ "$timezone_valid" = false ]; do
-        TIMEZONE=$(ui_input "System Configuration" \
+    # Auto-detect timezone (try multiple methods)
+    local detected_tz=""
+    
+    # Method 1: Check if timedatectl works
+    if command -v timedatectl &>/dev/null; then
+        detected_tz=$(timedatectl show -p Timezone --value 2>/dev/null || echo "")
+    fi
+    
+    # Method 2: Use IP-based geolocation as fallback
+    if [ -z "$detected_tz" ] || [ "$detected_tz" = "n/a" ]; then
+        detected_tz=$(curl -s "http://ip-api.com/line/?fields=timezone" 2>/dev/null || echo "UTC")
+    fi
+    
+    # Default to UTC if detection failed
+    [ -z "$detected_tz" ] && detected_tz="UTC"
+    
+    # Confirm with user
+    if ui_yesno "Timezone Detection" \
+"Auto-detected timezone: $detected_tz
+
+Is this correct?
+
+Select YES to use it, or NO to enter manually."; then
+        TIMEZONE="$detected_tz"
+    else
+        # Manual entry
+        local timezone_valid=false
+        while [ "$timezone_valid" = false ]; do
+            TIMEZONE=$(ui_input "System Configuration" \
 "Enter your timezone:
 
 Examples:
-• America/New_York
-• Europe/London
-• Asia/Tokyo
-• UTC
+  - America/New_York
+  - Europe/London
+  - Asia/Tokyo
+  - UTC
 
-Find yours at: /usr/share/zoneinfo/" "America/New_York")
-        
-        if validate_timezone "$TIMEZONE"; then
-            timezone_valid=true
-        else
-            ui_msgbox "Error" "Invalid timezone: $TIMEZONE\n\nPlease check /usr/share/zoneinfo/ for valid options."
-        fi
-    done
+Find yours at: /usr/share/zoneinfo/" "$detected_tz")
+            
+            if validate_timezone "$TIMEZONE"; then
+                timezone_valid=true
+            else
+                ui_msgbox "Error" "Invalid timezone: $TIMEZONE\n\nPlease check /usr/share/zoneinfo/ for valid options."
+            fi
+        done
+    fi
     
     log_to_file "Timezone: $TIMEZONE"
     
@@ -214,6 +240,10 @@ Ready to begin?" || return 1
 # Run installation phases with progress
 run_installation() {
     log_to_file "Starting installation phases"
+    
+    # Suppress kernel messages to console during installation
+    # (they'll still go to dmesg/journal)
+    dmesg -n 1 2>/dev/null || true
     
     {
         # Phase 1: System update (0-15%)

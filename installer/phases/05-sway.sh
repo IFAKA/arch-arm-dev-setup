@@ -229,80 +229,84 @@ EOF
     # 🚀 BEST DX: Auto-start Sway on login to tty1
     # Create .bash_profile (for Bash fallback compatibility)
     cat > "$user_home/.bash_profile" <<'EOF'
-# Auto-start Sway on tty1
-if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
-    echo "Starting Sway..."
-    exec sway
+# Auto-start Sway on login (tty1 or ttyAMA0 for UTM serial console)
+if [ -z "$WAYLAND_DISPLAY" ]; then
+    current_tty=$(tty)
+    if [ "$current_tty" = "/dev/tty1" ] || [ "$current_tty" = "/dev/ttyAMA0" ]; then
+        echo "Starting Sway..."
+        exec sway
+    fi
 fi
 EOF
     
     # Create .zprofile (for Zsh - the default shell)
     cat > "$user_home/.zprofile" <<'EOF'
-# Auto-start Sway on tty1
-if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
-    echo "Starting Sway..."
-    exec sway
+# Auto-start Sway on login (tty1 or ttyAMA0 for UTM serial console)
+if [ -z "$WAYLAND_DISPLAY" ]; then
+    local current_tty=$(tty)
+    if [ "$current_tty" = "/dev/tty1" ] || [ "$current_tty" = "/dev/ttyAMA0" ]; then
+        echo "Starting Sway..."
+        exec sway
+    fi
 fi
 EOF
     
     # Create welcome message (shown once on first login)
     cat > "$user_home/.welcome-message.txt" <<'EOF'
-╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║         🚀 Welcome to Your Development Environment!       ║
-║                                                           ║
-╠═══════════════════════════════════════════════════════════╣
-║                                                           ║
-║  Shell: Zsh with Starship prompt (git-aware, beautiful)  ║
-║  Editor: Neovim with VimZap (12ms startup, LazyVim DX)   ║
-║                                                           ║
-║  Quick Commands:                                          ║
-║  ────────────────────────────────────────────────────     ║
-║  v, vi, vim  Open Neovim (press Space for menu)          ║
-║  help        Show all commands and keybindings            ║
-║  wf          Start frontend dev (Postgres + Redis)        ║
-║  wfs         Start fullstack dev (all databases)          ║
-║  mem         Check memory usage                           ║
-║  dstart      Start Docker containers                      ║
-║  dstop       Stop Docker containers                       ║
-║                                                           ║
-║  Neovim (VimZap) Quick Start:                            ║
-║  ────────────────────────────────────────────────────     ║
-║  Space       Command menu (shows all keybindings)        ║
-║  Space + e   File explorer                               ║
-║  Space + ff  Find files (fuzzy search)                   ║
-║  Space + fg  Grep in files                               ║
-║  Space + gg  LazyGit                                     ║
-║  Space + ?   Show all keymaps                            ║
-║                                                           ║
-║  Sway Keybindings:                                        ║
-║  ────────────────────────────────────────────────────     ║
-║  Super+Enter        Open new terminal                     ║
-║  Super+w            Open Firefox browser                  ║
-║  Super+n            Open Neovim in terminal               ║
-║  Super+d            Application launcher                  ║
-║  Super+Tab          Switch between windows                ║
-║  Super+1/2/3/4      Switch to workspace 1/2/3/4           ║
-║  Super+f            Toggle fullscreen                     ║
-║  Super+r            Resize mode                           ║
-║  Super+Shift+Q      Close window                          ║
-║  Super+Shift+E      Exit Sway                             ║
-║                                                           ║
-║  Media Commands:                                          ║
-║  ────────────────────────────────────────────────────     ║
-║  ytplay <url>       Watch YouTube in mpv                  ║
-║  ytsearch <terms>   Search and play YouTube               ║
-║  web                Open Firefox                          ║
-║                                                           ║
-║  Documentation:                                           ║
-║  ────────────────────────────────────────────────────     ║
-║  ~/QUICKSTART.md    Comprehensive guide                   ║
-║  help               Quick command reference               ║
-║                                                           ║
-║  This message will only show once.                        ║
-║  Type 'help' anytime to see all commands.                 ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝
+================================================================
+             Welcome to Your Development Environment!            
+================================================================
+
+  Shell: Zsh with Starship prompt (git-aware, beautiful)
+  Editor: Neovim with VimZap (12ms startup, LazyVim DX)
+
+  Quick Commands:
+  ----------------------------------------------------------------
+  v, vi, vim    Open Neovim (press Space for menu)
+  help          Show all commands and keybindings
+  wf            Start frontend dev (Postgres + Redis)
+  wfs           Start fullstack dev (all databases)
+  mem           Check memory usage
+  dstart        Start Docker containers
+  dstop         Stop Docker containers
+
+  Neovim (VimZap) Quick Start:
+  ----------------------------------------------------------------
+  Space         Command menu (shows all keybindings)
+  Space + e     File explorer
+  Space + ff    Find files (fuzzy search)
+  Space + fg    Grep in files
+  Space + gg    LazyGit
+  Space + ?     Show all keymaps
+
+  Sway Keybindings:
+  ----------------------------------------------------------------
+  Super+Enter          Open new terminal
+  Super+w              Open Firefox browser
+  Super+n              Open Neovim in terminal
+  Super+d              Application launcher
+  Super+Tab            Switch between windows
+  Super+1/2/3/4        Switch to workspace 1/2/3/4
+  Super+f              Toggle fullscreen
+  Super+r              Resize mode
+  Super+Shift+Q        Close window
+  Super+Shift+E        Exit Sway
+
+  Media Commands:
+  ----------------------------------------------------------------
+  ytplay <url>         Watch YouTube in mpv
+  ytsearch <terms>     Search and play YouTube
+  web                  Open Firefox
+
+  Documentation:
+  ----------------------------------------------------------------
+  ~/QUICKSTART.md      Comprehensive guide
+  help                 Quick command reference
+
+  This message will only show once.
+  Type 'help' anytime to see all commands.
+
+================================================================
 EOF
     
     # Create first-login marker (will be deleted after first display)
