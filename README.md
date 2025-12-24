@@ -19,8 +19,11 @@ Perfect for UTM virtual machines on Apple Silicon Macs or physical ARM devices l
 #### **⚡ One-Command Setup** *(NEW - Handles Everything Automatically)*
 
 ```bash
-# Just boot the VM from UTM Gallery and run:
-curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
+# Just boot the VM from UTM Gallery and run (cache-busted):
+curl -fsSL "https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh?$(date +%s)" | bash
+
+# Or verify latest version first:
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/verify-latest.sh | bash
 ```
 
 **That's it!** The script automatically:
