@@ -108,53 +108,58 @@ auto_expand_disk() {
         return 0
     fi
     
-    log_info "Found ${unallocated_gb}GB unallocated space - preparing system..."
+    log_info "Found ${unallocated_gb}GB unallocated space - expanding now..."
     
-    # Update system first (UTM Gallery images may be outdated)
-    log_info "Updating system packages (this may take a few minutes)..."
-    echo "      Downloading and installing updates..."
-    pacman -Syu --noconfirm 2>&1 | grep -E "(downloading|installing|upgrading|^Total|checking)" | \
-        while read line; do echo "      $line"; done || true
-    log_success "System packages updated"
+    # Expand partition using sfdisk (always available, no packages needed)
+    log_info "Expanding partition ${part_num} on ${root_device}..."
+    echo ", +" | sfdisk --no-reread -N "$part_num" "$root_device" &>/dev/null || {
+        log_warning "sfdisk failed, trying parted method..."
+        
+        # Fallback: install parted (but don't upgrade system first)
+        pacman -S --noconfirm --needed parted &>/dev/null || {
+            log_warning "Could not install parted, skipping expansion"
+            return 0
+        }
+        
+        parted -s "$root_device" resizepart "$part_num" 100% &>/dev/null || {
+            log_warning "Partition expansion failed"
+            return 0
+        }
+    }
     
-    # NOW install tools
-    log_info "Installing disk expansion tools..."
-    pacman -S --noconfirm --needed cloud-guest-utils parted e2fsprogs 2>&1 | \
-        grep -E "(downloading|installing|^Packages|Total)" | \
-        while read line; do echo "      $line"; done || true
-    
-    # Verify parted is now available
-    if ! command -v parted &>/dev/null; then
-        log_warning "Failed to install parted, skipping expansion"
-        return 0
-    fi
-    
-    log_info "Expanding disk to use all ${unallocated_gb}GB..."
-    
-    # Expand partition
-    if command -v growpart &>/dev/null; then
-        growpart "$root_device" "$part_num" 2>&1 | grep -v "CHANGED" || \
-            parted -s "$root_device" resizepart "$part_num" 100% 2>&1
-    else
-        parted -s "$root_device" resizepart "$part_num" 100% 2>&1
-    fi
+    # Reload partition table
+    partprobe "$root_device" &>/dev/null || partx -u "$root_device" &>/dev/null || true
     
     # Expand filesystem
     local fs_type=$(findmnt -n -o FSTYPE "$root_mount")
     log_info "Expanding ${fs_type} filesystem..."
     case "$fs_type" in
         ext4|ext3|ext2)
-            resize2fs "$root_mount" 2>&1 | grep -E "(resized|nothing to do)" || true
+            resize2fs "$root_mount" &>/dev/null || {
+                log_warning "Filesystem expansion failed"
+                return 0
+            }
             ;;
         xfs)
-            xfs_growfs "$root_mount" 2>&1 | tail -1 || true
+            xfs_growfs "$root_mount" &>/dev/null || {
+                log_warning "Filesystem expansion failed"
+                return 0
+            }
             ;;
         btrfs)
-            btrfs filesystem resize max "$root_mount" 2>&1 | tail -1 || true
+            btrfs filesystem resize max "$root_mount" &>/dev/null || {
+                log_warning "Filesystem expansion failed"
+                return 0
+            }
+            ;;
+        *)
+            log_warning "Unknown filesystem type: $fs_type"
+            return 0
             ;;
     esac
     
-    log_success "Disk expanded successfully! (+${unallocated_gb}GB)"
+    local new_size=$(df -h / | awk 'NR==2 {print $2}')
+    log_success "Disk expanded successfully! New size: ${new_size}"
 }
 
 # Pre-flight checks
