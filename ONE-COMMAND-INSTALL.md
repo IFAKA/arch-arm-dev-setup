@@ -5,10 +5,37 @@
 ## 🚀 Quick Start (30 seconds)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
+# Recommended: Use cache-busting to ensure latest version
+curl -fsSL "https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh?$(date +%s)" | bash
 ```
 
 That's it. Go grab coffee.
+
+<details>
+<summary><strong>🔍 How to verify you have the latest version</strong></summary>
+
+**Option 1: Check version before running**
+```bash
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/verify-latest.sh | bash
+```
+
+**Option 2: Download and inspect**
+```bash
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh > /tmp/install.sh
+grep "INSTALLER_VERSION=" /tmp/install.sh
+# Should show: INSTALLER_VERSION="2.0.0"
+bash /tmp/install.sh
+```
+
+**Option 3: Use specific commit (guaranteed)**
+```bash
+# Latest commit: 053facf (v2.0.0)
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/053facf/install.sh | bash
+```
+
+The script shows its version in the banner when it starts.
+
+</details>
 
 ---
 
