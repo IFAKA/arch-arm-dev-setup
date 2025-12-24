@@ -243,7 +243,7 @@ EOF
     cat > "$user_home/.zprofile" <<'EOF'
 # Auto-start Sway on login (tty1 or ttyAMA0 for UTM serial console)
 if [ -z "$WAYLAND_DISPLAY" ]; then
-    local current_tty=$(tty)
+    current_tty=$(tty)
     if [ "$current_tty" = "/dev/tty1" ] || [ "$current_tty" = "/dev/ttyAMA0" ]; then
         echo "Starting Sway..."
         exec sway

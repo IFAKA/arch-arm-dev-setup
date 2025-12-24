@@ -12,6 +12,61 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source UI library
 source "$SCRIPT_DIR/ui.sh"
 
+# Wrapper for pacman that handles Landlock/sandbox errors automatically
+# This is needed because after system upgrade, pacman 7.1.0+ requires kernel 5.13+
+# for Landlock LSM, but we haven't rebooted to the new kernel yet
+safe_pacman() {
+    local output_file="/tmp/pacman-safe-$$.log"
+    local exit_code=0
+    
+    # Try normal pacman first
+    "$@" 2>&1 | tee "$output_file"
+    exit_code=${PIPESTATUS[0]}
+    
+    # If successful, clean up and return
+    if [ $exit_code -eq 0 ]; then
+        rm -f "$output_file"
+        return 0
+    fi
+    
+    # Check if it was a Landlock/sandbox error
+    if grep -qi "landlock.*not supported\|sandbox.*failed" "$output_file" 2>/dev/null; then
+        echo "[WARN] Pacman sandbox not supported, retrying with --disable-sandbox"
+        
+        # Build new command with --disable-sandbox flag
+        local cmd_array=("$@")
+        local new_cmd=()
+        local found_pacman=false
+        
+        for arg in "${cmd_array[@]}"; do
+            new_cmd+=("$arg")
+            if [[ "$arg" == *"pacman"* ]] && [ "$found_pacman" = false ]; then
+                new_cmd+=("--disable-sandbox")
+                found_pacman=true
+            fi
+        done
+        
+        # Try with --disable-sandbox
+        if "${new_cmd[@]}" 2>&1; then
+            rm -f "$output_file"
+            return 0
+        fi
+    fi
+    
+    rm -f "$output_file"
+    return $exit_code
+}
+
+# Export so phase scripts can use it
+export -f safe_pacman
+
+# Override pacman command in subshells to use safe_pacman automatically
+# This way existing phase scripts work without modification
+pacman() {
+    safe_pacman /usr/bin/pacman "$@"
+}
+export -f pacman
+
 # Installation state
 INSTALL_LOG="/var/log/arch-arm-setup.log"
 INSTALL_STATE="/tmp/arch-arm-install-state.$$"
