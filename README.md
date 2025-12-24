@@ -14,9 +14,27 @@ Perfect for UTM virtual machines on Apple Silicon Macs or physical ARM devices l
 
 ### 🍎 For Mac Users (UTM - Recommended!)
 
-**📖 Complete step-by-step guide:** [**INSTALL-FROM-UTM-GALLERY.md**](INSTALL-FROM-UTM-GALLERY.md) ⭐
+**📖 Complete guide:** [**ONE-COMMAND-INSTALL.md**](ONE-COMMAND-INSTALL.md) ⭐ **FULLY AUTONOMOUS!**
 
-#### **⚡ Super Quick Setup (2 Commands)**
+#### **⚡ One-Command Setup** *(NEW - Handles Everything Automatically)*
+
+```bash
+# Just boot the VM from UTM Gallery and run:
+curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
+```
+
+**That's it!** The script automatically:
+- ✅ Expands disk to 32GB
+- ✅ Cleans /boot partition (97MB → 200MB+)
+- ✅ Upgrades system (glibc 2.35 → 2.42, kernel 5.10 → 6.18)
+- ✅ Handles pacman sandbox/Landlock errors
+- ✅ Installs TUI framework
+- ✅ Launches interactive installer wizard
+
+**Total time:** ~25-30 minutes (5-10 min automated + 15-20 min TUI)
+
+<details>
+<summary><strong>📖 Or use the 2-command setup (if you want pre-install disk resize)</strong></summary>
 
 ```bash
 # 1. On macOS - Prepare the VM (downloads, resizes disk to 32GB):
@@ -25,6 +43,8 @@ curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/macos
 # 2. In the VM (after booting) - Install everything:
 curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 ```
+
+</details>
 
 <details>
 <summary><strong>📖 Manual Setup (if you prefer step-by-step)</strong></summary>
