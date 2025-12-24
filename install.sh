@@ -263,6 +263,16 @@ upgrade_system() {
     echo "      Your disk has been expanded, so there's plenty of space now."
     echo ""
     
+    # Clean /boot to prevent "no space left" errors during kernel upgrade
+    log_info "Cleaning /boot partition..."
+    rm -f /boot/initramfs-linux-fallback.img.old 2>/dev/null || true
+    rm -f /boot/initramfs-linux.img.old 2>/dev/null || true
+    rm -f /boot/vmlinuz-linux.old 2>/dev/null || true
+    
+    # Show available space
+    local boot_avail=$(df -h /boot | awk 'NR==2 {print $4}')
+    log_info "/boot partition has $boot_avail available"
+    
     # Full system upgrade
     pacman -Syu --noconfirm || {
         log_error "System upgrade failed"
