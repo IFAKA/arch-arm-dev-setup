@@ -112,11 +112,16 @@ auto_expand_disk() {
     
     # Update system first (UTM Gallery images may be outdated)
     log_info "Updating system packages (this may take a few minutes)..."
-    pacman -Syu --noconfirm 2>&1 | tail -20 || true
+    echo "      Downloading and installing updates..."
+    pacman -Syu --noconfirm 2>&1 | grep -E "(downloading|installing|upgrading|^Total|checking)" | \
+        while read line; do echo "      $line"; done || true
+    log_success "System packages updated"
     
     # NOW install tools
     log_info "Installing disk expansion tools..."
-    pacman -S --noconfirm --needed cloud-guest-utils parted e2fsprogs 2>&1 | tail -10 || true
+    pacman -S --noconfirm --needed cloud-guest-utils parted e2fsprogs 2>&1 | \
+        grep -E "(downloading|installing|^Packages|Total)" | \
+        while read line; do echo "      $line"; done || true
     
     # Verify parted is now available
     if ! command -v parted &>/dev/null; then
