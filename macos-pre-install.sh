@@ -48,9 +48,9 @@ This script will:
   4. Resize the VM disk to 32GB
   5. Provide instructions for next steps
 
-Press Ctrl+C to cancel, or Enter to continue...
+Starting in 3 seconds... (Press Ctrl+C to cancel)
 EOF
-    read -r
+    sleep 3
 }
 
 # Check if running on macOS
@@ -189,17 +189,22 @@ resize_disk() {
     local target_size="${1:-32G}"
     
     log_info "Resizing disk to $target_size..."
-    log_warning "Make sure the VM is NOT running!"
-    log_info ""
-    read -p "Is the VM shut down? (y/N): " -n 1 -r
-    echo
     
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_error "Please shut down the VM first, then run this script again"
+    # Check if VM is running by checking if qemu process is using the disk file
+    cd "$VM_PATH/Data" || exit 1
+    
+    if lsof "$DISK_FILE" &>/dev/null; then
+        log_error "VM is currently running!"
+        log_info ""
+        log_info "Please shut down the VM first:"
+        log_info "  1. Open UTM"
+        log_info "  2. Stop the ArchLinux VM"
+        log_info "  3. Run this script again"
+        log_info ""
         exit 1
     fi
     
-    cd "$VM_PATH/Data" || exit 1
+    log_success "VM is not running - safe to resize"
     
     log_info "Running: qemu-img resize \"$DISK_FILE\" $target_size"
     
@@ -275,10 +280,9 @@ main() {
     echo "================================================================"
     echo ""
     
-    # Ask for target size
-    log_info "Recommended disk size: 32GB"
-    read -p "Enter disk size (default: 32G): " target_size
-    target_size="${target_size:-32G}"
+    # Automatically use 32GB (can be overridden with argument)
+    local target_size="${1:-32G}"
+    log_info "Target disk size: $target_size"
     
     resize_disk "$target_size"
     
