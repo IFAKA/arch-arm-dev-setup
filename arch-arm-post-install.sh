@@ -234,6 +234,31 @@ default_border none
 default_floating_border none
 EOF
     
+    log_info "Setting up Sway auto-start on login..."
+    # Create .zprofile for auto-start (supports both tty1 and ttyAMA0 for UTM)
+    cat > ~/.zprofile <<'PROFILE_EOF'
+# Auto-start Sway on login (tty1 or ttyAMA0 for UTM serial console)
+if [ -z "$WAYLAND_DISPLAY" ]; then
+    current_tty=$(tty)
+    if [ "$current_tty" = "/dev/tty1" ] || [ "$current_tty" = "/dev/ttyAMA0" ]; then
+        echo "Starting Sway..."
+        exec sway
+    fi
+fi
+PROFILE_EOF
+
+    # Also create .bash_profile for bash compatibility
+    cat > ~/.bash_profile <<'PROFILE_EOF'
+# Auto-start Sway on login (tty1 or ttyAMA0 for UTM serial console)
+if [ -z "$WAYLAND_DISPLAY" ]; then
+    current_tty=$(tty)
+    if [ "$current_tty" = "/dev/tty1" ] || [ "$current_tty" = "/dev/ttyAMA0" ]; then
+        echo "Starting Sway..."
+        exec sway
+    fi
+fi
+PROFILE_EOF
+    
     log_info "Creating Waybar configuration..."
     mkdir -p ~/.config/waybar
     
@@ -744,8 +769,8 @@ Next steps:
 2. Mount shared folder (if configured in UTM):
    sudo mount -a
 
-3. Start Sway:
-   sway
+3. Sway will start automatically on next login!
+   (Or manually run: sway)
 
 4. Quick reference:
    mem          - Check memory usage
