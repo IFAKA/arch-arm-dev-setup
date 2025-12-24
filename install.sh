@@ -483,8 +483,47 @@ install_whiptail() {
         fi
     fi
     
-    pacman -S --noconfirm libnewt
-    log_success "Whiptail installed (91.9 KB)"
+    # Try normal install first
+    if pacman -S --noconfirm libnewt 2>&1 | tee /tmp/whiptail-install.log; then
+        log_success "Whiptail installed"
+        return 0
+    fi
+    
+    # Check if failure was due to Landlock/sandbox issue (pacman 7.1.0+ on old kernels)
+    if grep -qi "landlock\|sandbox" /tmp/whiptail-install.log 2>/dev/null; then
+        log_warning "Pacman sandbox not supported on this kernel, using fallback method"
+        log_info "This is expected on older kernels and will be fixed after reboot"
+        
+        # Try with sandbox disabled (requires pacman 6.1.0+)
+        if pacman -S --noconfirm --disable-sandbox libnewt 2>/dev/null; then
+            log_success "Whiptail installed (sandbox disabled)"
+            rm -f /tmp/whiptail-install.log
+            return 0
+        fi
+        
+        # Last resort: manual extraction from cache
+        log_info "Attempting manual package extraction..."
+        pacman -Sw --noconfirm --cachedir /tmp/pkg-cache libnewt 2>/dev/null
+        
+        if ls /tmp/pkg-cache/libnewt-*.pkg.tar.* &>/dev/null; then
+            cd /
+            tar -xf /tmp/pkg-cache/libnewt-*.pkg.tar.* 2>/dev/null
+            
+            if command -v whiptail &>/dev/null; then
+                log_success "Whiptail installed (manual extraction)"
+                rm -rf /tmp/pkg-cache /tmp/whiptail-install.log
+                return 0
+            fi
+        fi
+    fi
+    
+    # If we got here, installation failed
+    log_error "Failed to install whiptail"
+    cat /tmp/whiptail-install.log 2>/dev/null
+    echo ""
+    log_info "You can try installing manually after reboot:"
+    log_info "  pacman -S libnewt"
+    exit 1
 }
 
 # Download installer
