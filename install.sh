@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # Arch ARM Dev Setup - One-Line Installer
-# Version: 2.1.0 (2025-12-24)
-# Commit: 54c5a2a
+# Version: 2.2.0 (2025-12-24)
+# Commit: 4f1e71b
 # Usage: curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 #
 # This is the bootstrap script that:
@@ -13,6 +13,7 @@
 # 5. Downloads and runs main installer
 #
 # Changelog:
+#   v2.2.0 - CRITICAL: Use /usr/local/bin wrapper instead of function export
 #   v2.1.0 - Fixed main installer to use safe_pacman, fixed .zprofile syntax
 #   v2.0.0 - Added safe_pacman wrapper for Landlock/sandbox errors
 #   v1.0.0 - Initial release with /boot cleanup
@@ -20,7 +21,7 @@
 
 set -euo pipefail
 
-INSTALLER_VERSION="2.1.0"
+INSTALLER_VERSION="2.2.0"
 INSTALLER_DATE="2025-12-24"
 
 # Colors for basic output
