@@ -1,15 +1,26 @@
 #!/bin/bash
 #
 # Arch ARM Dev Setup - One-Line Installer
+# Version: 2.0.0 (2025-12-24)
+# Commit: 5addd13
 # Usage: curl -fsSL https://raw.githubusercontent.com/IFAKA/arch-arm-dev-setup/main/install.sh | bash
 #
 # This is the bootstrap script that:
-# 1. Performs pre-flight checks
-# 2. Installs whiptail (libnewt) for beautiful TUI
-# 3. Downloads and runs the main installer
+# 1. Auto-expands disk in VMs
+# 2. Cleans /boot partition
+# 3. Upgrades system (handles Landlock errors automatically)
+# 4. Installs whiptail for TUI
+# 5. Downloads and runs main installer
+#
+# Changelog:
+#   v2.0.0 - Added safe_pacman wrapper for Landlock/sandbox errors
+#   v1.0.0 - Initial release with /boot cleanup
 #
 
 set -euo pipefail
+
+INSTALLER_VERSION="2.0.0"
+INSTALLER_DATE="2025-12-24"
 
 # Colors for basic output
 RED='\033[0;31m'
@@ -52,6 +63,7 @@ show_banner() {
 ║            Development Environment Setup                 ║
 ║              One Command. Zero Friction.                 ║
 ║                                                           ║
+║                     Version ${INSTALLER_VERSION} (${INSTALLER_DATE})                ║
 ╚═══════════════════════════════════════════════════════════╝
 
 EOF
