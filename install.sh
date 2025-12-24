@@ -244,11 +244,14 @@ init_pacman() {
 # Upgrade system packages (required for outdated UTM Gallery images)
 upgrade_system() {
     # Check if system is severely outdated (glibc < 2.38)
-    local glibc_version=$(ldd --version | head -1 | awk '{print $NF}')
+    local glibc_version=$(ldd --version 2>/dev/null | head -1 | awk '{print $NF}')
     local needs_upgrade=false
     
-    # Simple version check - if glibc is 2.3x where x < 8, we need upgrade
-    if [[ $glibc_version =~ ^2\.3[0-7] ]] || [[ $glibc_version =~ ^2\.[0-2] ]]; then
+    # Handle case where ldd is not available or fails
+    if [ -z "$glibc_version" ]; then
+        log_warning "Could not detect glibc version, will attempt upgrade"
+        needs_upgrade=true
+    elif [[ $glibc_version =~ ^2\.3[0-7] ]] || [[ $glibc_version =~ ^2\.[0-2] ]]; then
         needs_upgrade=true
     fi
     
@@ -257,7 +260,7 @@ upgrade_system() {
         return 0
     fi
     
-    log_warning "Outdated system detected (glibc $glibc_version < 2.38)"
+    log_warning "Outdated system detected (glibc ${glibc_version:-unknown} < 2.38)"
     log_info "Upgrading system packages (this will take 5-10 minutes)..."
     echo "      This is necessary for UTM Gallery images which are outdated."
     echo "      Your disk has been expanded, so there's plenty of space now."
@@ -266,14 +269,51 @@ upgrade_system() {
     # Clean /boot to prevent "no space left" errors during kernel upgrade
     log_info "Cleaning /boot partition..."
     
-    # Remove old backup files if they exist
-    rm -f /boot/initramfs-linux-fallback.img.old 2>/dev/null || true
-    rm -f /boot/initramfs-linux.img.old 2>/dev/null || true
-    rm -f /boot/vmlinuz-linux.old 2>/dev/null || true
+    # Verify /boot exists and is mounted
+    if ! mountpoint -q /boot 2>/dev/null && [ ! -d /boot ]; then
+        log_warning "/boot is not a separate partition (using root partition)"
+        # Continue - /boot is part of root filesystem
+    fi
     
-    # Check space after removing .old files
-    local boot_avail_mb=$(df /boot | awk 'NR==2 {print int($4/1024)}')
-    local boot_avail_human=$(df -h /boot | awk 'NR==2 {print $4}')
+    # Safety check: verify /boot is writable
+    if [ ! -w /boot ]; then
+        log_error "/boot is not writable - may be read-only filesystem"
+        log_info "Attempting to remount read-write..."
+        mount -o remount,rw /boot 2>/dev/null || {
+            log_error "Failed to remount /boot as read-write"
+            exit 1
+        }
+        log_success "/boot remounted as read-write"
+    fi
+    
+    # Remove old backup files if they exist (from previous upgrades)
+    local cleaned_old=false
+    if [ -f /boot/initramfs-linux-fallback.img.old ] || \
+       [ -f /boot/initramfs-linux.img.old ] || \
+       [ -f /boot/vmlinuz-linux.old ]; then
+        rm -f /boot/initramfs-linux-fallback.img.old 2>/dev/null || true
+        rm -f /boot/initramfs-linux.img.old 2>/dev/null || true
+        rm -f /boot/vmlinuz-linux.old 2>/dev/null || true
+        cleaned_old=true
+        log_info "Removed old kernel backup files"
+    fi
+    
+    # Get /boot space info (handle both separate partition and directory)
+    local boot_avail_mb boot_avail_human
+    if df /boot &>/dev/null; then
+        boot_avail_mb=$(df /boot 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+        boot_avail_human=$(df -h /boot 2>/dev/null | awk 'NR==2 {print $4}')
+    else
+        # Fallback if df fails
+        boot_avail_mb=0
+        boot_avail_human="unknown"
+    fi
+    
+    # Handle case where df returns empty (corrupted filesystem, etc.)
+    if [ -z "$boot_avail_mb" ] || [ "$boot_avail_mb" = "0" ]; then
+        log_warning "Could not determine /boot space, attempting upgrade anyway"
+        boot_avail_mb=200  # Assume sufficient space
+    fi
     
     # If still insufficient, remove fallback image (will be recreated during upgrade)
     if [ "$boot_avail_mb" -lt 100 ]; then
@@ -281,60 +321,152 @@ upgrade_system() {
         log_info "It will be automatically recreated during system upgrade"
         
         if [ -f /boot/initramfs-linux-fallback.img ]; then
-            local fallback_size=$(du -h /boot/initramfs-linux-fallback.img | awk '{print $1}')
-            rm -f /boot/initramfs-linux-fallback.img
-            log_success "Removed fallback image (${fallback_size})"
+            # Get size before removing (handle case where du fails)
+            local fallback_size=$(du -h /boot/initramfs-linux-fallback.img 2>/dev/null | awk '{print $1}')
+            fallback_size=${fallback_size:-"unknown size"}
+            
+            # Verify we can actually remove it
+            if rm -f /boot/initramfs-linux-fallback.img 2>/dev/null; then
+                log_success "Removed fallback image (${fallback_size})"
+            else
+                log_error "Failed to remove fallback image - permission denied or I/O error"
+                exit 1
+            fi
+        else
+            log_warning "Fallback image not found, may have been removed already"
         fi
         
-        # Re-check space
-        boot_avail_mb=$(df /boot | awk 'NR==2 {print int($4/1024)}')
-        boot_avail_human=$(df -h /boot | awk 'NR==2 {print $4}')
+        # Re-check space after removal
+        if df /boot &>/dev/null; then
+            boot_avail_mb=$(df /boot 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+            boot_avail_human=$(df -h /boot 2>/dev/null | awk 'NR==2 {print $4}')
+        fi
     fi
     
-    # Final space check
-    if [ "$boot_avail_mb" -lt 100 ]; then
+    # Final space check (only if we can determine space)
+    if [ -n "$boot_avail_mb" ] && [ "$boot_avail_mb" != "0" ] && [ "$boot_avail_mb" -lt 100 ]; then
         log_error "/boot partition critically low on space: ${boot_avail_human} available"
         log_error "Need at least 100MB for kernel upgrade"
         echo ""
         echo "Current /boot contents:"
-        ls -lh /boot/ | tail -n +2
+        ls -lh /boot/ 2>/dev/null | tail -n +2 || echo "  (unable to list /boot contents)"
         echo ""
-        echo "Manual cleanup required. Try:"
-        echo "  rm -f /boot/initramfs-linux-fallback.img  # Will be recreated"
+        echo "Disk usage breakdown:"
+        du -sh /boot/* 2>/dev/null | sort -rh | head -10 || echo "  (unable to show disk usage)"
         echo ""
-        echo "Or resize the /boot partition to at least 300MB."
+        echo "Manual cleanup options:"
+        echo "  1. Remove fallback image (will be recreated):"
+        echo "     rm -f /boot/initramfs-linux-fallback.img"
+        echo ""
+        echo "  2. Remove all old kernels (dangerous - know what you're doing):"
+        echo "     rm -f /boot/*.old /boot/initramfs-linux-fallback.img"
+        echo ""
+        echo "  3. Resize /boot partition to 300MB+ (recommended for long-term):"
+        echo "     https://github.com/IFAKA/arch-arm-dev-setup/blob/main/TROUBLESHOOTING.md#15"
+        echo ""
         echo "Then re-run this script."
         exit 1
     fi
     
-    log_success "/boot partition has ${boot_avail_human} available (${boot_avail_mb}MB)"
+    # Show success message (only if we have valid space info)
+    if [ -n "$boot_avail_human" ] && [ "$boot_avail_human" != "unknown" ]; then
+        log_success "/boot partition has ${boot_avail_human} available (${boot_avail_mb}MB)"
+    else
+        log_info "Proceeding with system upgrade"
+    fi
     
-    # Full system upgrade
-    if ! pacman -Syu --noconfirm; then
+    # Full system upgrade with enhanced error handling
+    log_info "Running pacman -Syu (this may take several minutes)..."
+    if ! pacman -Syu --noconfirm 2>&1 | tee /tmp/pacman-upgrade.log; then
         log_error "System upgrade failed"
         echo ""
         
-        # Check if it was a /boot space issue
-        local boot_free=$(df /boot | awk 'NR==2 {print int($4/1024)}')
-        if [ "$boot_free" -lt 50 ]; then
-            log_error "Failure likely caused by insufficient /boot space"
+        # Check for common failure patterns
+        if grep -qi "no space left" /tmp/pacman-upgrade.log 2>/dev/null; then
+            log_error "Failure caused by: No space left on device"
+            
+            # Determine which partition is full
+            if df /boot &>/dev/null; then
+                local boot_free=$(df /boot 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+                local root_free=$(df / 2>/dev/null | awk 'NR==2 {print int($4/1024/1024)}')
+                
+                echo "Disk space status:"
+                echo "  /boot: ${boot_free}MB free"
+                echo "  /    : ${root_free}GB free"
+            fi
+            
             echo ""
             echo "Recovery steps:"
-            echo "  1. Clean /boot manually:"
-            echo "     rm -f /boot/*.old"
-            echo "  2. Re-run the upgrade:"
+            echo "  1. Clean /boot:"
+            echo "     rm -f /boot/*.old /boot/initramfs-linux-fallback.img"
+            echo "  2. Clean pacman cache:"
+            echo "     pacman -Sc --noconfirm"
+            echo "  3. Re-run upgrade:"
             echo "     pacman -Syu --noconfirm"
+            echo "  4. Re-run this installer"
+            echo ""
+            exit 1
+        elif grep -qi "could not get lock" /tmp/pacman-upgrade.log 2>/dev/null; then
+            log_error "Failure caused by: Another package manager is running"
+            echo ""
+            echo "Recovery steps:"
+            echo "  1. Wait for other package operations to complete"
+            echo "  2. Or remove stale lock:"
+            echo "     rm -f /var/lib/pacman/db.lck"
             echo "  3. Re-run this installer"
             echo ""
             exit 1
+        elif grep -qi "keyring" /tmp/pacman-upgrade.log 2>/dev/null; then
+            log_error "Failure caused by: Package signing key issues"
+            echo ""
+            echo "Recovery steps:"
+            echo "  1. Reinitialize pacman keys:"
+            echo "     pacman-key --init"
+            echo "     pacman-key --populate archlinuxarm"
+            echo "  2. Re-run this installer"
+            echo ""
+            exit 1
+        else
+            # Generic failure - check if /boot might be an issue
+            if df /boot &>/dev/null; then
+                local boot_free=$(df /boot 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+                if [ -n "$boot_free" ] && [ "$boot_free" -lt 50 ]; then
+                    log_error "Failure likely caused by insufficient /boot space"
+                    echo ""
+                    echo "Recovery steps:"
+                    echo "  1. Clean /boot manually:"
+                    echo "     rm -f /boot/*.old /boot/initramfs-linux-fallback.img"
+                    echo "  2. Re-run the upgrade:"
+                    echo "     pacman -Syu --noconfirm"
+                    echo "  3. Re-run this installer"
+                    echo ""
+                    exit 1
+                fi
+            fi
+            
+            # Unknown error
+            log_warning "Unknown upgrade failure - attempting to continue with existing packages"
+            log_warning "Some features may not work correctly"
+            echo ""
+            echo "Last 20 lines of upgrade log:"
+            tail -20 /tmp/pacman-upgrade.log 2>/dev/null || echo "  (log unavailable)"
+            echo ""
+            echo "You may want to investigate and fix the issue manually, then re-run this installer"
+            sleep 5
+            return 0
         fi
-        
-        log_warning "Attempting to continue with existing packages..."
-        log_warning "Some features may not work correctly"
-        return 0
     fi
     
-    log_success "System upgrade complete!"
+    # Verify upgrade actually worked
+    local new_glibc=$(ldd --version 2>/dev/null | head -1 | awk '{print $NF}')
+    if [ -n "$new_glibc" ]; then
+        log_success "System upgrade complete! (glibc ${glibc_version:-unknown} → ${new_glibc})"
+    else
+        log_success "System upgrade complete!"
+    fi
+    
+    # Clean up log
+    rm -f /tmp/pacman-upgrade.log 2>/dev/null || true
 }
 
 # Install whiptail (libnewt) for beautiful TUI
